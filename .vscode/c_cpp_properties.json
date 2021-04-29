@@ -1,0 +1,33 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/lib",
+                "${workspaceFolder}/lib/**",
+                "${workspaceFolder}/lib/dab",
+                "${workspaceFolder}/lib/dab/**",
+                "${workspaceFolder}/lib/input",
+                "${workspaceFolder}/lib/input/**",
+                "/usr/local/include",
+                "/usr/local/include/**"
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "macos-gcc-x64",
+            "browse": {
+                "path": [
+                    "/usr/local/include",
+                    "/usr/local/include/*"
+                ]
+            }
+        }
+    ],
+    "version": 4
+}

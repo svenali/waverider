@@ -1,0 +1,5 @@
+/Users/sven/arbeit/programmiersprachen/CPP/waverider/build/CMakeFiles/rebuild_cache.dir
+/Users/sven/arbeit/programmiersprachen/CPP/waverider/build/CMakeFiles/edit_cache.dir
+/Users/sven/arbeit/programmiersprachen/CPP/waverider/build/CMakeFiles/package_source.dir
+/Users/sven/arbeit/programmiersprachen/CPP/waverider/build/CMakeFiles/package.dir
+/Users/sven/arbeit/programmiersprachen/CPP/waverider/build/CMakeFiles/waverider.dir

@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libfec.a CMakeFiles/fec.dir/encode_rs_char.o CMakeFiles/fec.dir/decode_rs_char.o CMakeFiles/fec.dir/init_rs_char.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libfec.a

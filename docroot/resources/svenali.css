@@ -1,0 +1,113 @@
+/** links **/
+a {
+    background-color: transparent;
+    text-decoration: none;
+}
+
+h2 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 24px;    
+    color: #337ab7;
+}
+
+h3 {
+    margin-top: 8px;
+    margin-bottom: 0px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 18px;    
+    color: #337ab7;
+}
+
+.north-widget {
+    background-color: #eaeaea;
+    border-radius: 4px;
+    position: fixed;
+}
+
+.west-widget {
+    background-color: #eaeaea;
+    border-radius: 4px;
+    float:left;
+    overflow: auto;
+    height: 500px;
+    width: 200px;
+}
+
+.south-widget {
+    background-color: #eaeaea;
+    border-radius: 4px;
+    position: fixed;
+    height: 40px;
+}
+
+.south-widget > .center {
+    background-color: #eaeaea;
+    border-radius: 4px;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+.serviceStation {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    transform: translate(2px, -10px);
+}
+
+.nav > ul {
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.nav > li {
+    list-style: none;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    position: relative;
+    left: -20px;
+}
+
+.nav > li > a {
+    padding-left: 10px;    
+}
+
+.nav > li:hover {
+    color:#337ab7;
+    background-color: #d0d5d8;
+    list-style: none;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    position: relative;
+    left: -20px;
+    cursor: pointer;
+}
+
+.nav > li:visited {
+    color:#fff;
+    background-color: #337ab7;
+    list-style: none;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    position: relative;
+    left: -20px;
+    cursor: pointer;
+}
+
+.item {
+    border-radius: 4px;
+    color: #337ab7; 
+    background-color: #eaeaea;
+    height: 40px;
+    padding: 0px 0px 0px 0px;
+}
+
+.itemselected {
+    border-radius: 4px;
+    color: #fff; 
+    background-color: #337ab7;
+    height: 40px;
+    padding: 0px 0px 0px 0px;
+}
