@@ -47,11 +47,16 @@
 #include "station-item.h"
 #include "wwav-streamer-resource.h"
 #include "radio-server.h"
+#include "csettingsformview.h"
+#include "crecords.h"
 
 using namespace Wt;
 using namespace std;
 
 class RadioEvent;
+class SettingsEvent;
+class CSettingsFormView;
+class CRecords;
 
 class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
 {
@@ -60,13 +65,20 @@ class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
         virtual ~WaveriderGUI();
 
         void radioEvent(const RadioEvent& event);
+        void settingsEvent(const SettingsEvent& event);
+        CRadioServer& getRadioServer() { return _radioServer; }
+        void cancelSettings() { _mainStack->setCurrentIndex(0); }
+        string recordPath() { return _recordPath; }
 
     private:
         void scan_dab();
+        void record();
         void initialiseRadioChannels();
         void handlePathChange();
         void connect();
         void removeChannelScanItem();
+
+        string _recordPath;         // For DownloadPage
 
         CRadioServer &_radioServer;
 
@@ -76,6 +88,7 @@ class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
         WContainerWidget *_motrow;
         shared_ptr<CWavStreamerResource> mAudioResource;
         WStackedWidget *_mediaPlayerContainer;
+        WStackedWidget *_mainStack;
         WText *_ServiceInfo;
         WText *_ServiceInfoSmall;
         WImage *_AntennaImg;
@@ -87,6 +100,9 @@ class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
         WContainerWidget *_firstRow;
         WContainerWidget *_betweenIMG;
         bool _removeChannelScanItem;
+        CSettingsFormView *_settings;
+        CRecords *_records;
+        WPushButton *recordButton; 
         
         //unique_ptr<WMenuItem> _channelScanItem;
 

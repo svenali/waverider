@@ -34,12 +34,19 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     header_row->setStyleClass("row");
 
     /** Title **/
+    auto settingsButton = make_unique<WPushButton>();
+    settingsButton->setIcon("resources/icons/gear-wheel-32x32.png");
+    settingsButton->setStyleClass("north-widget col-xs-1 col-md-1 col-lg-1");
+
+    auto fileDownloadButton = make_unique<WPushButton>();
+    fileDownloadButton->setIcon("resources/icons/folder-32x32.png");
+    fileDownloadButton->setStyleClass("north-widget col-xs-1 col-md-1 col-lg-1");
+    
     unique_ptr<WText> title = make_unique<WText>("<h2>Waverider</h2>");
-    title->setStyleClass("h1");
+    //title->setStyleClass("h1");
     title->setTextAlignment(AlignmentFlag::Center);
-    title->setStyleClass("north-widget");
+    title->setStyleClass("north-widget col-xs-10 col-md-10 col-lg-10");
     header_row->addWidget(move(title));
-    this->addWidget(move(header_row));
     
     auto row_middle = make_unique<WContainerWidget>();
     row_middle->setStyleClass("row");
@@ -51,9 +58,40 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     mMainWidget->setStyleClass("east-widget col-xs-12 col-md-9 col-lg-9");
 
     /*****************************************************************************************************
+     *   Settings and Services
+     *****************************************************************************************************/
+    _mainStack = mMainWidget->addNew<WStackedWidget>();
+    settingsButton->clicked().connect([=] 
+    {
+        if (_mainStack->currentIndex() == 0 || _mainStack->currentIndex() == 2)
+        {
+            _mainStack->setCurrentIndex(1);
+        }
+        else
+        {
+            _mainStack->setCurrentIndex(0);
+        }
+    });
+    fileDownloadButton->clicked().connect([=]
+    {
+        if (_mainStack->currentIndex() == 0 || _mainStack->currentIndex() == 1)
+        {
+            _mainStack->setCurrentIndex(2);
+        }
+        else
+        {
+            _mainStack->setCurrentIndex(0);
+        }
+    });
+    header_row->addWidget(move(fileDownloadButton));
+    header_row->addWidget(move(settingsButton));
+    this->addWidget(move(header_row));
+
+    /*****************************************************************************************************
      *   Service Info
      *****************************************************************************************************/
-    auto mMain_row = mMainWidget->addNew<WContainerWidget>();
+    //auto mMain_row = mMainWidget->addNew<WContainerWidget>();
+    auto mMain_row = _mainStack->addNew<WContainerWidget>();
     mMain_row->setStyleClass("row");
 
     auto infoServiceWidget = mMain_row->addNew<WContainerWidget>();
@@ -187,6 +225,16 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     cout << "WaveriderGUI: Channel Container Height: " << _ChannelContainer->height().toPixels() << endl;
 
     /*****************************************************************************************************
+     *   Settings
+     *****************************************************************************************************/
+    _settings = _mainStack->addNew<CSettingsFormView>(*this);
+
+    /*****************************************************************************************************
+     *   Records - Download
+     *****************************************************************************************************/
+    _records = _mainStack->addNew<CRecords>(*this);
+
+    /*****************************************************************************************************
      *   South Widgets
      *****************************************************************************************************/
     auto last_row = make_unique<WContainerWidget>();
@@ -196,8 +244,19 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     scan->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
     scan->clicked().connect(this, &WaveriderGUI::scan_dab);
     
-    auto record = last_row->addNew<WPushButton>("Record");
-    record->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
+    recordButton = last_row->addNew<WPushButton>("Record");
+    recordButton->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
+    recordButton->clicked().connect(this, &WaveriderGUI::record);
+    if (_radioServer.isRecording())
+    {
+        recordButton->setText("");
+        recordButton->setIcon("resources/icons/records.gif");
+    }
+    else
+    {
+        recordButton->setText("Record");
+        recordButton->setIcon("");
+    }
 
     auto stopAudio = last_row->addNew<WPushButton>("Stop");
     stopAudio->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
@@ -218,6 +277,9 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     _stationTimer->setInterval(chrono::seconds(1));
     _stationTimer->timeout().connect(this, &WaveriderGUI::initialiseRadioChannels);
     _stationTimer->start();
+
+    // If RadioServer still record, we will continue with radio listening
+    playAudio();
 }
 
 WaveriderGUI::~WaveriderGUI() 
@@ -228,10 +290,34 @@ WaveriderGUI::~WaveriderGUI()
 void WaveriderGUI::connect()
 {
     // Server-Push or WebSockets depends on config in wtconfig.xml in /etc
-    if (_radioServer.connect(this, bind(&WaveriderGUI::radioEvent, this, placeholders::_1)))
+    if (_radioServer.connect(this, 
+        bind(&WaveriderGUI::radioEvent, this, placeholders::_1),
+        bind(&WaveriderGUI::settingsEvent, this, placeholders::_1)))
     {
         WApplication::instance()->enableUpdates(true);
     }
+}
+
+void WaveriderGUI::settingsEvent(const SettingsEvent& e)
+{
+    WApplication *app = WApplication::instance();
+
+    if (e.getAction() == SettingsAction::loadedSettings)
+    {
+        _settings->setFormData(e.getDevice(), e.getIPAddress(), e.getPort(), e.getRecordPath());
+        _recordPath = e.getRecordPath();
+
+        _records->initDownloadPage();
+    }
+    else if (e.getAction() == SettingsAction::newSettings)
+    {
+        _mainStack->setCurrentIndex(0);
+        _recordPath = e.getRecordPath();
+
+        _records->initDownloadPage();
+    }    
+
+    app->triggerUpdate();
 }
 
 void WaveriderGUI::radioEvent(const RadioEvent& event)
@@ -295,6 +381,23 @@ void WaveriderGUI::scan_dab()
     _radioServer.scan_dab();
 }
 
+void WaveriderGUI::record()
+{
+    _radioServer.recordStream();
+
+    if (_radioServer.isRecording()) 
+    {
+        recordButton->setIcon("resources/icons/records.gif");
+        recordButton->setText("");
+    }
+    else
+    {
+        recordButton->setIcon("");
+        recordButton->setText("Record");
+        _records->updateDownloadPage();
+    }
+}
+
 void WaveriderGUI::removeChannelScanItem()
 {
     vector<WMenuItem*> items = mChannelMenu->items();
@@ -325,6 +428,7 @@ void WaveriderGUI::initialiseRadioChannels()
     cout << "Get saved Channels from DB" << endl; 
     _stationTimer->stop();
     _radioServer.getDABChannels();
+    _radioServer.getSettings();
 }
 
 void WaveriderGUI::handlePathChange()
@@ -362,7 +466,23 @@ void WaveriderGUI::setChannel(WMenuItem* item)
 
 void WaveriderGUI::playAudio()
 {
-    
+    if (_radioServer.isRecording() || _radioServer.isPlaying())
+    {
+        _radioServer.reactivateRecordingChannel();
+
+        _mediaPlayerContainer->removeWidget(mAudio);
+        _mediaPlayerContainer->removeWidget(_infoTextDirect);
+            
+        mAudio = _mediaPlayerContainer->addNew<WMediaPlayer>(MediaType::Audio);
+        WLink link("/dab/jplayer");
+        mAudio->addSource(MediaEncoding::WAV, link);
+        mAudio->playbackStarted().connect([=] {
+            cout << "Waverider::GUI: Lets go..." << endl;
+        });
+        mAudio->play();
+
+        _infoTextDirect = _mediaPlayerContainer->addNew<WText>("Soundausgabe direkt über die Soundkarte...");
+    }
 }
 
 void WaveriderGUI::stopAudio()

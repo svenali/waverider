@@ -26,6 +26,9 @@
 #include <Wt/WTime.h>
 #include <Wt/WDateTime.h>
 
+#include <dirent.h>
+#include <cstring>
+
 #include "dab-constants.h"
 #include "radio-receiver.h"
 #include "ringbuffer.h"
@@ -35,6 +38,10 @@
 
 #include "simple-timer.h"
 #include "radio-server.h"
+extern "C" 
+{
+    #include "wavfile.h"
+}
 
 using namespace Wt;
 using namespace std;
@@ -90,6 +97,13 @@ class CRadioController
         Signal<string> newEnsemble_; 
         Signal<bool>& scanStopped() { return scanStopped_; }
         Signal<bool> scanStopped_; 
+
+        // Recording
+        void setRecordFlag(bool f) { _recordFlag = f; }
+        bool recordFlag() { return _recordFlag; }
+        bool playFlag() { return _playFlag; }
+        void setRecordFromChannel(string channelName) { _recordFromChannel = channelName; }
+        void setRecordToDir(string dir) { _recordToDir = dir; }
 
     private:
         void resetTechnicalData();
@@ -153,6 +167,15 @@ class CRadioController
 
         // Scanning
         thread scanHandle;
+
+        // Recording
+        string getFilenameForRecord();
+
+        bool _recordFlag = false;
+        bool _playFlag = false;
+        string _recordFromChannel;
+        string _recordToDir;
+        FILE *_fd = nullptr;
 
         friend class CRadioServer;
 };

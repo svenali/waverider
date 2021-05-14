@@ -37,6 +37,10 @@ CRadioServer::CRadioServer(int argc, char *argv[], const std::string &wtConfigur
     _session.setConnection(std::move(_dbConnector));
 
     _session.mapClass<CService>("servicetable");
+    _session.mapClass<CSettings>("settings");
+
+    initDatabase();
+    readSettings();
     
     // prepare dummy mot Image
     ifstream input(this->appRoot() + "mot/test-pattern-640.png", std::ios::binary );
@@ -53,7 +57,45 @@ CRadioServer::~CRadioServer()
 
 }
 
-bool CRadioServer::connect(Client *client, const RadioEventCallback& handleEvent)
+void CRadioServer::initDatabase()
+{
+    try
+    {
+        _session.createTables();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }   
+}
+
+void CRadioServer::readSettings()
+{
+   try
+    {
+        dbo::Transaction transaction{_session};
+        _settings = _session.find<CSettings>().where("id = ?").bind("1");
+
+        cout << "Settings loaded ... " << _settings->_recordPath << endl;
+    }
+    catch (dbo::Exception e)
+    {
+        // Database not exists. Do scan.
+        cout << "Error in DB => no settings defined. Create one..." << endl;
+        dbo::Transaction transaction{_session};
+
+        auto s = make_unique<CSettings>();
+        s->_ipaddress = "0.0.0.0";
+        s->_port = "1234";
+        s->_radioDevice = "rtl-sdr";
+        s->_recordPath = "undefined";
+
+        _settings = _session.add(move(s));
+        _settings.flush();
+    } 
+}
+
+bool CRadioServer::connect(Client *client, const RadioEventCallback& handleEvent, const SettingEventCallback& handleSettingEvent)
 {
     unique_lock<recursive_mutex> lock(_mutex);
 
@@ -64,6 +106,7 @@ bool CRadioServer::connect(Client *client, const RadioEventCallback& handleEvent
         
         clientinfo.sessionID = WApplication::instance()->sessionId();
         clientinfo.eventCallback = handleEvent;
+        clientinfo.settingsCallback = handleSettingEvent;
 
         _clients[client] = clientinfo;
 
@@ -101,6 +144,29 @@ void CRadioServer::postRadioEvent(const RadioEvent& radioEvent)
         else
         {
             this->post(it->second.sessionID, bind(it->second.eventCallback, radioEvent));
+        }
+    }
+}
+
+void CRadioServer::postSettingEvent(const SettingsEvent& settingEvent)
+{
+    unique_lock<recursive_mutex> lock(_mutex);
+
+    WApplication *app = WApplication::instance();
+
+    for (ClientMap::const_iterator it = _clients.begin(); it != _clients.end(); it++)
+    {
+        /* 
+            Sollte der User direkt mit der App verbunden sein, den callback direkt aufrufen, sonst
+            server push.
+        */
+        if (app && app->sessionId() == it->second.sessionID)
+        {
+            it->second.settingsCallback(settingEvent);
+        }
+        else
+        {
+            this->post(it->second.sessionID, bind(it->second.settingsCallback, settingEvent));
         }
     }
 }
@@ -209,6 +275,30 @@ void CRadioServer::getDABChannels()
     }
 }
 
+void CRadioServer::getSettings()
+{
+    postSettingEvent(SettingsEvent(
+        _settings->_radioDevice, 
+        _settings->_ipaddress,
+        _settings->_port,
+        _settings->_recordPath,
+        SettingsAction::loadedSettings));
+}
+
+void CRadioServer::saveSettings(string device, string ipaddress, string port, string recordPath)
+{
+    dbo::Transaction transaction{_session};
+
+    _settings.modify()->setRadioDevice(device);
+    _settings.modify()->setRecordPath(recordPath);
+    _settings.modify()->setIPAddress(ipaddress);
+    _settings.modify()->setPort(port);
+
+    _settings.flush();
+
+    postSettingEvent(SettingsEvent(recordPath, SettingsAction::newSettings));
+}
+
 void CRadioServer::setChannel(uint32_t serviceid, string serviceLabel, string channel)
 {
     if (_jplayerStreamer->isStreaming())
@@ -219,7 +309,21 @@ void CRadioServer::setChannel(uint32_t serviceid, string serviceLabel, string ch
     _jplayerStreamer->setChannel(serviceid, serviceLabel, channel);
     _jplayerStreamer->prepareStreaming();
 
+    _playingChannel = serviceLabel;
+    _playingChannel.erase(_playingChannel.find_last_not_of(" ")+1);
+
     postRadioEvent(RadioEvent(serviceid, serviceLabel, channel, EventAction::channelChange));
+}
+
+void CRadioServer::reactivateRecordingChannel()
+{
+    _jplayerStreamer->sendAudioHeaderAgain();
+
+    postRadioEvent(RadioEvent(
+        _jplayerStreamer->getPlayingServiceID(),
+        _jplayerStreamer->getPlayingServiceName(),
+        _jplayerStreamer->getPlayingChannelID(),
+        EventAction::channelChange));
 }
 
 void CRadioServer::stop()
@@ -228,6 +332,9 @@ void CRadioServer::stop()
     {
         _jplayerStreamer->stopStreaming();
     }
+
+    _playingChannel = "";
+    _radioController->setRecordFlag(false);
 }
 
 void CRadioServer::updateMOT(mot_file_t mot_file)
@@ -298,4 +405,43 @@ void CRadioServer::updateSNR(int snr)
 void CRadioServer::updateSearchingChannel(string channel, string stationCount)
 {
     postRadioEvent(RadioEvent(channel, stationCount, EventAction::channelScan));
+}
+
+void CRadioServer::recordStream()
+{
+    _radioController->setRecordToDir(_settings->_recordPath);
+    _radioController->setRecordFromChannel(_playingChannel);
+
+    if (_radioController->recordFlag())
+    {
+        _radioController->setRecordFlag(false);
+    }
+    else
+    {
+        _radioController->setRecordFlag(true);
+    } 
+}
+
+bool CRadioServer::isRecording()
+{
+    if (_radioController->recordFlag())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool CRadioServer::isPlaying()
+{
+    if (_radioController->playFlag())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }

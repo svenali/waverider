@@ -72,6 +72,12 @@ void CJPlayerStreamerResource::prepareStreaming()
     }
 }
 
+void CJPlayerStreamerResource::sendAudioHeaderAgain()
+{
+    send_header = true;
+    _audioCounter = 20;
+}
+
 void CJPlayerStreamerResource::setChannel(uint32_t serviceId, string serviceName, string channelID)
 {
     _radioStation.channelID = channelID;

@@ -38,6 +38,7 @@
 #include "jplayer-streamer-resource.h"
 #include "wwav-streamer-resource.h"
 #include "service.h"
+#include "csettings.h"
 
 namespace dbo = Wt::Dbo;
 
@@ -45,6 +46,31 @@ using namespace std;
 using namespace Wt;
 
 enum EventAction { channelFound, channelChange, motChange, signalStrength, channelScan };
+enum SettingsAction { newSettings, updatedSettings, loadedSettings };
+
+class SettingsEvent
+{
+    public:
+        SettingsEvent(const string device, const string ipaddress, const string port, const string recordPath, SettingsAction e)
+        : _device(device), _ipaddress(ipaddress), _port(port), _recordPath(recordPath)
+        { _settingsAction = e; };
+        SettingsEvent(const string recordPath, SettingsAction e)
+        : _device(""), _ipaddress(""), _port(""), _recordPath(recordPath)
+        { _settingsAction = e; };
+
+        const string getDevice() const { return _device; }
+        const string getIPAddress() const { return _ipaddress; }
+        const string getPort() const { return _port; }
+        const string getRecordPath() const { return _recordPath; }
+        const SettingsAction getAction() const { return _settingsAction; }
+
+    private:
+        SettingsAction _settingsAction;
+        string _device;
+        string _ipaddress;
+        string _port;
+        string _recordPath;
+};
 
 class RadioEvent
 {
@@ -80,6 +106,7 @@ class RadioEvent
 };
 
 typedef function<void (const RadioEvent&)> RadioEventCallback;
+typedef function<void (const SettingsEvent&)> SettingEventCallback;
 
 class CRadioController; // Forward Declaration
 class CJPlayerStreamerResource;
@@ -92,11 +119,17 @@ class CRadioServer : public WServer
 
         class Client { }; // Placeholderclass for the client
 
-        bool connect(Client *client, const RadioEventCallback& handleEvent);
+        bool connect(Client *client, const RadioEventCallback& handleEvent, const SettingEventCallback& SettingEventCallback);
         bool disconnect(Client *client);
 
         void scan_dab();
+        void recordStream();
+        void reactivateRecordingChannel(); // If Record Session is still open...
+        bool isRecording();
+        bool isPlaying();
         void getDABChannels();  // load all DAB+ Channels from db-file
+        void getSettings();     // load Settings
+        void saveSettings(string device, string ipaddress, string port, string recordPath);
         
         /* commands for Streaming over httpd */
         void setChannel(uint32_t serviceid, string serviceLabel, string channel);
@@ -111,6 +144,7 @@ class CRadioServer : public WServer
         CJPlayerStreamerResource* _jplayerStreamer;
         WMemoryResource* _motImage;
         string mot_resource_path;
+        string _playingChannel; // For Records
         
         // Database connectivity
         unique_ptr<dbo::backend::Sqlite3> _dbConnector;
@@ -122,17 +156,25 @@ class CRadioServer : public WServer
         {
             string sessionID;
             RadioEventCallback eventCallback;
+            SettingEventCallback settingsCallback;
         };
         recursive_mutex _mutex;  // for connect
         typedef map<Client*, ClientInfo> ClientMap;
         ClientMap _clients;
 
+        // Settings
+        dbo::ptr<CSettings> _settings;
+        
         void postRadioEvent(const RadioEvent& radioEvent);
+        void postSettingEvent(const SettingsEvent& settingEvent);
 
         // CRadioController slots
         void newRadioChannel(uint32_t serviceId, string serviceName, string channelID);
         void newEnsemble(string name);
         void scanStop();
+
+        void initDatabase();
+        void readSettings();
 
         friend class CRadioController;
 };

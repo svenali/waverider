@@ -57,8 +57,12 @@ class CJPlayerStreamerResource : public WStreamResource
 
         void prepareStreaming();
         void stopStreaming();
+        void sendAudioHeaderAgain();    // If record session is still open...
         
         void setChannel(uint32_t serviceId, string serviceName, string channelID);
+        uint32_t getPlayingServiceID() { return _radioStation.serviceId; }
+        string getPlayingServiceName() { return _radioStation.serviceName; }
+        string getPlayingChannelID() { return _radioStation.channelID; }
 
     private:
         shared_ptr<CRadioController> _radioController;

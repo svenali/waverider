@@ -71,6 +71,11 @@ set(HEADERS
     lib/input/rtl_sdr.h
     lib/input/rtl_tcp.h
     lib/input/virtual_input.h
+    src/include/cdeletepushbutton.h
+    src/include/crecords.h
+    src/include/csettings.h
+    src/include/csettingsform.h
+    src/include/csettingsformview.h
     src/include/service.h
     src/include/radio-server.h
     src/include/wwav-streamer-resource.h
@@ -115,6 +120,11 @@ set(SOURCES
     lib/input/raw_file.cpp
     lib/input/rtl_sdr.cpp
     lib/input/rtl_tcp.cpp
+    src/sources/cdeletepushbutton.cpp
+    src/sources/crecords.cpp
+    src/sources/csettings.cpp
+    src/sources/csettingsform.cpp
+    src/sources/csettingsformview.cpp
     src/sources/service.cpp
     src/sources/radio-server.cpp
     src/sources/wwav-streamer-resource.cpp

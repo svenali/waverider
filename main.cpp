@@ -13,6 +13,8 @@ unique_ptr<WApplication> createApplication(const WEnvironment& env, CRadioServer
   auto theme = std::make_shared<Wt::WBootstrapTheme>();
   theme->setVersion(Wt::BootstrapVersion::v3);
   app->setTheme(theme);
+  //cout << "Approot: " << WApplication::appRoot() << endl;
+  //app->messageResourceBundle().use(WApplication::appRoot()+"/forms/settings");
   return app;
 }
 

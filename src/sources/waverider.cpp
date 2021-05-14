@@ -27,6 +27,9 @@ WaveriderApplication::WaveriderApplication(const WEnvironment& env, CRadioServer
     enableUpdates(true);
 
     useStyleSheet("resources/svenali-bs.css", "all");
+    WApplication *app = WApplication::instance();
+    cout << "Approot: " << app->appRoot() << endl;
+    messageResourceBundle().use(app->appRoot() + "forms/settings");
     
     //initialiseCss();
     

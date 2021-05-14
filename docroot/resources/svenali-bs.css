@@ -50,6 +50,8 @@ and (orientation: portrait) {
 .north-widget {
     background-color: #eaeaea;
     border-radius: 4px;
+    margin-bottom: 5px;
+    height: 60px;
 }
 
 .west-widget {

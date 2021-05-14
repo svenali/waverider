@@ -190,6 +190,89 @@ void CRadioController::onNewAudio(std::vector<int16_t>&& audioData, int sampleRa
     {
         audioSampleRate = sampleRate;
     }
+
+    // record the stream
+    if (_recordFlag)
+    {
+        if (not _fd)
+        {
+            //cout << "RadioController: (getFilenameForRecord): " << getFilenameForRecord() << endl;
+            string path = _recordToDir + "/" + getFilenameForRecord();
+            _fd = wavfile_open(path.c_str(), audioSampleRate, 2);
+
+            if (not _fd)
+            {
+                cerr << "Could not write to file " << getFilenameForRecord().c_str() << endl;
+            }
+        }
+        else
+        {
+            //cout << "Write to WAV File ..." << endl;
+            wavfile_write(_fd, audioData.data(), audioData.size());
+        }
+    }
+    else
+    {
+        if (_fd)
+        {
+            wavfile_close(_fd);
+            _fd = nullptr;
+        }
+    }
+}
+
+// looks for files with similar names and find the highest number. if file exists automaticly adds 
+// a higher number
+string CRadioController::getFilenameForRecord()
+{
+    string filename = "";
+
+    int max_number = -1;
+
+    DIR *directory;
+    struct dirent *file;
+    directory = opendir(_recordToDir.c_str());
+    while (file = readdir(directory)) 
+    {
+        string filename_temp(file->d_name);
+        if (filename_temp.find(_recordFromChannel) == 0)
+        {
+            // get the number
+            size_t pos = filename_temp.find("_");
+
+            if (pos != string::npos)
+            {
+                string n = filename_temp.substr(pos + 1, filename_temp.find(".") - pos - 1);
+                int nr = atoi(n.c_str());
+                if (nr > max_number)
+                {
+                    max_number = nr;
+                }
+            }
+            else
+            {
+                if (max_number == -1)
+                {
+                    max_number = 1;
+                }
+            }
+        }
+    }
+
+    if (max_number == -1)
+    {
+        filename = _recordFromChannel + ".wav";
+    }
+    else
+    {  
+        stringstream ss;
+        max_number++;
+        ss << max_number;
+
+        filename = _recordFromChannel + "_" + ss.str() + ".wav";
+    }
+    
+    return filename;
 }
 
 void CRadioController::onRsErrors(bool uncorrectedErrors, int numCorrectedErrors) 
@@ -513,6 +596,7 @@ void CRadioController::stop()
     currentTitle = "No Station";
     currentText = "";
     currentChannel = "";
+    _playFlag = false;
 
     labelTimer.stopTimer();
     //scanStopped_.emit(true);
@@ -534,6 +618,7 @@ void CRadioController::play(string channel, string title, uint32_t service)
     }
 
     currentTitle = title;
+    _playFlag = true;
     // emit TitleChange
 
     if (isChannelScan == true) 
