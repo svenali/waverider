@@ -114,6 +114,18 @@
 
  ![Ansicht](screenshots/Ansicht.png)
 
+ Nun oben rechts auf das Rädchen (Einstellungen) klicken und entsprechend dem gewünschten anpassen:
+
+ ![Settings](screenshots/Settings.png)
+
+ In der Regel reicht die Anpassung des Aufnahmeordners. Des Weiteren kann hier auch die Auswahl des Codecs für die Aufzeichnung angepasst werden. Bei Internetradiosendern empfiehlt sich zunächst den Codec des Senders beizubehalten. Wenn die FFMPEG Unterstützung nicht mitinstalliert wurde, wird nur die WAV-Aufnahme zur Verfühung gestellt. Sollte der USB-Stick in einem anderen Gerät benutzt werden, muss für den DAB+ USB Stick die entsprechende Adresse eingegeben werden.
+
+ Danach wieder auf das Rädchen oben rechts klicken um die Einstellungen zu schließen. Jetzt können über Scan die DAB+ Radio Stationen gesucht werden. Die Internetradiostationen werden heruntergeladen, wenn vorher dafür in den Internetradiomodus gewechselt wird (auf die Erde mit dem Kopfhörer oben links klicken und danach auf Scan).
+
+ Nach alles Scans landen die Sender entsprechend im Auswahlmenü links und können angeklickt werden.
+
+ Viel Spaß!
+
 ## Lizenz
 
  GPL 3.0
