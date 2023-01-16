@@ -75,6 +75,13 @@
  ```
  und anschließend den Vorgang wiederholen.
 
+ Wird **waverider** unter MacOS installiert und benutzt, kann das vorherige ausführen von:
+
+ ```
+ export LIBRARY_PATH="/usr/local/opt/librtlsdr/lib:/usr/local/opt/mpg123/lib:/usr/local/opt/faad2/lib:/usr/local/opt/fftw/lib:/usr/local/lib"
+ ```
+ notwendig werden.
+
 ### Waverider installieren
 
  ```
