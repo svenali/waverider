@@ -110,7 +110,9 @@
  http://pi4:9090
  ```
 
- 
+ Danach sollte in etwa folgendes auf dem Bildschirm erscheinen:
+
+ ![Ansicht](screenshots/Ansicht.png)
 
 ## Lizenz
 
