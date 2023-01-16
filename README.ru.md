@@ -3,43 +3,45 @@
  
  Для других языков, нажмите ссылку: [Английский](README.md), [Немецкий](README.ru.md).
 
- Waverider является ПО для получения радио станций в диапазоне DAB+ (Digital Audio Broadcasting) и через интернет. Waverider хочет убрать все отрицательные своиства других приборов. К тому относится записать полученную программу (на пример музыку), как в тогдашних времменён, когда все люди записали их музыку на кассете. Это ПО в сравнении [Welle.io](https://www.welle.io/) по другому работает, предоставляет потребителем WebGUI, т. е. управление **waverider** будет через браузер возможно и потребител может управлять севером в роде пульта дистанционного управления.    
+ Waverider является ПО для радиоприема в диапазоне DAB+ (Digital Audio Broadcasting) и через интернет. Waverider хочет убрать все отрицательные своиства других приборов. К тому относится даже записание полученной программой (на пример музыки), как в тогдашних времменён, когда все люди записали их музыку на кассете. Это ПО в сравнении [Welle.io](https://www.welle.io/) по другому работает, предоставляет потребителем WebGUI, т. е. управление **waverider** будет через браузер возможно и потребител может управлять севером в роде пульта дистанционного управления.    
  Музыка будет возпроизводена через стереоаппаратуру или, если ПО (сервер) **waverider** будет управлен браузерером, через колонки компьютера. 
  Кроме того радио программа, не важно ли интернет или DAB+, может записана в разных форматах
  Zusätzlich kann das Radioprogramm, egal ob Internetsender oder DAB+, in vielen gängigen Formaten (AAC, MP3, FLAC, WAV, etc.). Я использую для ПО **waverider** Raspberry PI с расширенией HiFiBerry. Там я установил Headless System (Raspbian).   
 
-## Voraussetzungen
+## Условия
 
-### Hardware
+### Аппаратное обеспечение
 
- Die hier aufgezählten Komponenten sind lediglich als Empfehlung zu verstehen. 
+ Эти здесь насчитанные части соответствуют только личный совет:
 
  - [Raspian PI Version 4](https://www.berrybase.de/raspberry-pi-4)
  - [HifiBerry dac+](https://www.reichelt.de/raspberry-pi-shield-hifiberry-digi-pro-rpi-hb-digi-pro-p191035.html?PROVID=2788&gclid=Cj0KCQiAiJSeBhCCARIsAHnAzT__QmJPWgV-ErtblZ-7ycyYZwIkmJqCKKA4leR8-YvK2ETBWSpr_3AaAh9kEALw_wcB)
  - [HiFiBerry+ Metall Gehäuse](https://www.amazon.de/HiFiBerry-Digi-Metall-Raspberry-schwarz-Black/dp/B08YDNJVRL/ref=sr_1_2?__mk_de_DE=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=2NMDXL3KY4TLW&keywords=HIFI+berry%2B+metall+case&qid=1673864322&sprefix=hifi+berry%2B+metall+case%2Caps%2C84&sr=8-2).
  - [DVB-T/DAB+ USB Stick](https://www.amazon.de/DollaTek-Digitale-Fernsehtuner-Empf%C3%A4nger-Unterst%C3%BCtzung/dp/B07DJT5NHD/ref=sr_1_5?keywords=dvb-t+stick+usb&qid=1673864429&sprefix=dvb-t+st%2Caps%2C87&sr=8-5)
 
- Grundsätzlich ist **waverider** für jedwede Linux/Unix/Mac-Umgebung kompilier- und nutzbar. Es wird auch nicht zwingend ein USB Empfangsstick benötigt. Der Stick kann auch an einem anderem Rechner / Gerät eingesteckt und über das Netzwerk betrieben werden. Das macht beispielsweise Sinn, wenn an einem anderen Standort ein besserer Radioempfang möglich ist.     
+ На самом деле **waverider** адресовано всем, исползующим операционную систему Linux или Unix или Mac на своём устройстве. USB прибор для DAB+ не обязано. USB прибор может и установлено на другом устройстве и может исползовано через другой компьютер. Это имеет смысл, если например  радиоприем на другом месте лучше. 
 
-### Software
+### ПО
 
- Folgende Bibliotheken werden für **waverider** benötigt:
+ Вам необходимо установить вот эти дополнительные ПО и библиотеки для **waverider**:
 
- - Zum Kompilieren wird [cmake](https://cmake.org/) benötigt.
- - Für die WebGUI [Wt](https://www.webtoolkit.eu/wt)
- - MP3 Bibliothek [libmpg123](https://www.mpg123.de/)
- - Für alle Features (mehr Codecs, mehr Internetradiosender, etc.) [FFMPEG](https://ffmpeg.org/download.html)
+ - Для компиляции [cmake](https://cmake.org/)
+ - Для WebGUI [Wt](https://www.webtoolkit.eu/wt)
+ - MP3 библиотека [libmpg123](https://www.mpg123.de/)
+ - Для всех услуг (больше Codecs, etc.) [FFMPEG](https://ffmpeg.org/download.html)
  - [boost] (https://www.boost.org/)
  - [rtlsdr] (https://github.com/osmocom/rtl-sdr)
- - Für DAB+ Radio [libfaad](https://wiki.videolan.org/FAAD2_and_FAAC/)
- - Für DAB+ Radio [FFTW](https://www.fftw.org/)
- - Für Soundausgabe über HiFi: [Alsa](https://www.alsa-project.org/wiki/Main_Page)
+ - Для радиоприема DAB+ [libfaad](https://wiki.videolan.org/FAAD2_and_FAAC/)
+ - Для радиоприеме DAB+ Radio [FFTW](https://www.fftw.org/)
+ - Для выход музыки через стереоаппаратуру: [Alsa](https://www.alsa-project.org/wiki/Main_Page)
 
-## Installation
+## Установление
 
-### Voraussetzungen installieren
+### Установить условия
 
- Zunächst alle Bibliotheken installieren. Unter Mac empfiehlt sich hierfür zum Beispiel [Homebrew](https://brew.sh/). Unter Raspian oder Debian Linux reichen i. d. R. die Pakete:
+ С самом сначала установить все библиотеки. На устройстве Mac [Homebrew](https://brew.sh/) будет советован. 
+ 
+ На Raspian или Debian Linux установление следующих ПО достаточно:
 
  ```
  sudo apt-get install alsa-utils
@@ -53,39 +55,38 @@
  sudo apt-get install libssl-dev
  ```
 
- Unter debian sollte die GUI wt auch zur Verfügung stehen. 
+ На debian GUI wt доступен и может установлен вот так: 
 
  ```
  sudo apt-get install witty witty-dev witty-doc witty-dbg
  ```
 
- Bei raspbian ist das leider nicht der Fall und muss händisch kompiliert werden. 
+ На raspbian к сожалению это не так, вам надо установить **wt** ручной.
 
  ```
  wget https://github.com/emweb/wt/archive/4.8.3.tgz
  ```
 
- Archiv extrahieren, danach:
+ Распакуйте файл, и затем:
  ```
  cmake .
  make
  make install
  ```
 
- Sollte eine Fehlermeldung ausgegeben werden, folgendes in die Datei CMakeList.txt eintragen:
+ В случае указания ошибки, добавите следующие строчку в файл CMakeList.txt:
  ```
  set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic") 
  ```
- und anschließend den Vorgang wiederholen.
+ и повторйте компиляция ещё раз.
 
- Wird **waverider** unter MacOS installiert und benutzt, kann das vorherige ausführen von:
+ Для компиляции **waverider** на MacOS, эта строчка написана в терминал может стать необходимо:
 
  ```
  export LIBRARY_PATH="/usr/local/opt/librtlsdr/lib:/usr/local/opt/mpg123/lib:/usr/local/opt/faad2/lib:/usr/local/opt/fftw/lib:/usr/local/lib"
  ```
- notwendig werden.
 
-### Waverider installieren
+### ПО Waverider установить
 
  ```
  wget https://github.com/svenali/waverider/archive/wr-0.9.tar.bz2
@@ -96,45 +97,45 @@
  make
  ```
 
-## Schnelleinstieg
+## Быстрый вход
 
-### waverider starten
+### waverider стартовать
 
- Gestartet wird **waverider** mit:
+ Стартуйте **waverider** так:
 
  ```
  ./waverider --approot=../approot --docroot=../docroot --http-listen 0.0.0.0:9090
  ```
- Es empfiehlt sich das Anlegen eines Skriptes (z. B. wr.sh):
+ Писать скрипт будет советовано (например wr.sh):
 
  ```
  #!/bin/bash
  ./waverider --approot=../approot --docroot=../docroot --http-listen 0.0.0.0:9090 &
  ```
 
-### waverider aufrufen
+### waverider управлять
  
- Jetzt in einem Browser die Adresse des Gerätes aufrufen, auf dem waverider läuft. Zum Beispiel
+ Сейчас пишйте в браузере в адресную строчку адрес прибора, где **waverider** было статовано.Например:
 
  ```
  http://pi4:9090
  ```
 
- Danach sollte in etwa folgendes auf dem Bildschirm erscheinen:
+ Затем сайт должен быть на экране видно (см. в следующую картинку).
 
  <img src="screenshots/Ansicht.png" width="640px" height="auto">
 
- Nun oben rechts auf das Rädchen (Einstellungen) klicken und entsprechend dem gewünschten anpassen:
+ На верху, на правой стороне пожалуйста, нажмите на ссылку настроек и исправите ваши настроика так, как вам необходимо:
 
  <img src="screenshots/Settings.png" width="400px" height="auto">
 
- In der Regel reicht die Anpassung des Aufnahmeordners. Des Weiteren kann hier auch die Auswahl des Codecs für die Aufzeichnung angepasst werden. Bei Internetradiosendern empfiehlt sich zunächst den Codec des Senders beizubehalten. Wenn die FFMPEG Unterstützung nicht mitinstalliert wurde, wird nur die WAV-Aufnahme zur Verfühung gestellt. Sollte der USB-Stick in einem anderen Gerät benutzt werden, muss für den DAB+ USB Stick die entsprechende Adresse eingegeben werden.
+ На самом деле исправление записанной папки дотаточно. Кроме того здесь можно настроить Codecs для записания музыки. На сличае интернет радиоприема советовано остаться Codec станции, чтобы сэкономить хранилище. Если FFMPEG не установлено, только записание в формате WAV доступно. Для тех, кто исползует USB прибор в другом устройстве, могут здесь указать адрес другого устройства.
 
- Danach wieder auf das Rädchen oben rechts klicken um die Einstellungen zu schließen. Jetzt können über Scan die DAB+ Radio Stationen gesucht werden. Die Internetradiostationen werden heruntergeladen, wenn vorher dafür in den Internetradiomodus gewechselt wird (auf die Erde mit dem Kopfhörer oben links klicken und danach auf Scan).
+ Затем снова нажать на кнопку настроек, чтобы закрыли настроики. Сейчас через кнопку SCAN, все радио станций в эфире вашего региона могут быть наидены. Интернет станции могут скачаны, если вы меняете режим в онлайн (нажмите на земля с наушниками наверху-слево и затем на Scan).
 
- Nach alles Scans landen die Sender entsprechend im Auswahlmenü links und können angeklickt werden.
+ После всех Scans, все станции будут выбраны в меню на левой стороне.
 
- Viel Spaß!
+ Повеселиться!
 
 ## Lizenz
 
@@ -142,8 +143,8 @@
 
 ## Danksagung
 
- Ich danke den Entwicklern von [welle.io](https://www.welle.io/) für die geleistete Arbeit.
+ Я благодарен разработникам [welle.io](https://www.welle.io/) за их работу.
 
-## Hilfe
+## Помощь
 
- Gerne Feedback bzw. Problemmeldungen an mich: svenali [at] gmx [dot] de.
+ Обратитесь к мне на случае проблем или Feedback: svenali [at] gmx [dot] de.
