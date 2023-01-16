@@ -122,7 +122,7 @@
 
  Now please click on the button in the top right-hand corner and adjust **waverider** to the desired settings:
 
- ![Settings](screenshots/Settings.png)
+ <img src="screenshots/Settings.png" width="100px" height="auto">
 
  As a rule, it is sufficient to adjust the recording folder. Furthermore, the selection of the codec for the recording can also be adjusted here. In the case of Internet radio stations, it is recommended to initially keep the station's codec. If FFMPEG support has not been installed, only WAV recording is available. If the USB stick is used in another device, the corresponding address must be entered for the DAB+ USB stick.
 
