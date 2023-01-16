@@ -25,9 +25,15 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
         _radioServer(radioServer)
 {
     WApplication *app = WApplication::instance();
-    cout << "APP ID: " << app->id() << endl;
+    //cout << "APP ID: " << app->id() << endl;
+
+    // Standard dab+ - Modus
+    _dabMode = true;
+    _bouquetMode = false;
 
     _removeChannelScanItem = true;
+    _removeWebChannelScanItem = true;
+    _lastSelectedRadioStation = nullptr;
 
     this->setStyleClass("container-fluid");
     auto header_row = make_unique<WContainerWidget>();
@@ -41,29 +47,69 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     auto fileDownloadButton = make_unique<WPushButton>();
     fileDownloadButton->setIcon("resources/icons/folder-32x32.png");
     fileDownloadButton->setStyleClass("north-widget col-xs-1 col-md-1 col-lg-1");
+
+    auto bouquetEditorButton = make_unique<WPushButton>();
+    bouquetEditorButton->setIcon("resources/icons/flower-bouquet-32x32.png");
+    bouquetEditorButton->setStyleClass("north-widget col-xs-1 col-md-1 col-lg-1");
+
+    // Modi umschalten
+    _WebAndDABSwitchButton = header_row->addNew<WPushButton>();
+    _WebAndDABSwitchButton->setIcon("resources/icons/internet-radio-fm-32x32.png");
+    _WebAndDABSwitchButton->setStyleClass("north-widget col-xs-6 col-md-1 col-lg-1");
+    if (app->environment().agentIsMobileWebKit()) 
+    {
+        _WebAndDABSwitchButton->setIcon("resources/icons/internet-radio-fm-154x130.png");
+        _WebAndDABSwitchButton->setHeight(150);
+    }
+
+    // Bouquets
+    auto bouquetsButton = header_row->addNew<WPushButton>();
+    bouquetsButton->setIcon("resources/icons/favoriten-32x32.png");
+    bouquetsButton->setStyleClass("north-widget col-xs-6 col-md-1 col-lg-1");
+    if (app->environment().agentIsMobileWebKit()) 
+    {
+        bouquetsButton->setIcon("resources/icons/favoriten-137x130.png");
+        bouquetsButton->setHeight(150);
+    }
     
-    unique_ptr<WText> title = make_unique<WText>("<h2>Waverider</h2>");
-    //title->setStyleClass("h1");
-    title->setTextAlignment(AlignmentFlag::Center);
-    title->setStyleClass("north-widget col-xs-10 col-md-10 col-lg-10");
-    header_row->addWidget(move(title));
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        unique_ptr<WText> title = make_unique<WText>("<h2>Waverider</h2>");
+        title->setTextAlignment(AlignmentFlag::Center);
+        title->setStyleClass("north-widget col-xs-7 col-md-7 col-lg-7");
+        header_row->addWidget(move(title));
+    }
     
     auto row_middle = make_unique<WContainerWidget>();
     row_middle->setStyleClass("row");
     
-    _ChannelContainer = row_middle->addNew<WContainerWidget>();
-    _ChannelContainer->setStyleClass("west-widget col-xs-12 col-md-3 col-lg-3");
+    _channelContainer = row_middle->addNew<WStackedWidget>();
+    _channelContainer->setStyleClass("west-widget col-xs-12 col-md-3 col-lg-3");
+
+    _DABChannelContainer = _channelContainer->addNew<WContainerWidget>();
+    _InternetChannelContainer = _channelContainer->addNew<WContainerWidget>();
+    _BouquetChannelContainer = _channelContainer->addNew<WContainerWidget>();
+    WText* web_channel_text = _InternetChannelContainer->addNew<WText>("<h3>web Channels</h3>");
+    web_channel_text->setTextAlignment(AlignmentFlag::Center);
+    WContainerWidget *web_channels = _InternetChannelContainer->addNew<WContainerWidget>();
+    web_channels->setHeight(500);
+    mWebChannelMenu = web_channels->addNew<WMenu>();
+    auto _channelWebScanItem = make_unique<CStationItem>(0xFF, "Dummy Channel (download)", "0xFF", nullptr);
+    _channelWebScanItem->setStyleClass("h4");
+    // connect vor move!
+    _channelWebScanItem->clicked().connect(this, &WaveriderGUI::scan_internet);
+    mWebChannelMenu->addItem(move(_channelWebScanItem)); 
     
     mMainWidget = make_unique<WContainerWidget>();
     mMainWidget->setStyleClass("east-widget col-xs-12 col-md-9 col-lg-9");
 
-    /*****************************************************************************************************
+    /*********************************************************************************************
      *   Settings and Services
-     *****************************************************************************************************/
+     ********************************************************************************************/
     _mainStack = mMainWidget->addNew<WStackedWidget>();
     settingsButton->clicked().connect([=] 
     {
-        if (_mainStack->currentIndex() == 0 || _mainStack->currentIndex() == 2)
+        if (_mainStack->currentIndex() == 0 || _mainStack->currentIndex() == 2 || _mainStack->currentIndex() == 3 )
         {
             _mainStack->setCurrentIndex(1);
         }
@@ -74,7 +120,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     });
     fileDownloadButton->clicked().connect([=]
     {
-        if (_mainStack->currentIndex() == 0 || _mainStack->currentIndex() == 1)
+        if (_mainStack->currentIndex() == 0 || _mainStack->currentIndex() == 1 || _mainStack->currentIndex() == 3 )
         {
             _mainStack->setCurrentIndex(2);
         }
@@ -83,13 +129,62 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
             _mainStack->setCurrentIndex(0);
         }
     });
-    header_row->addWidget(move(fileDownloadButton));
-    header_row->addWidget(move(settingsButton));
+    bouquetEditorButton->clicked().connect([=]
+    {
+        if (_mainStack->currentIndex() == 0 || _mainStack->currentIndex() == 1 || _mainStack->currentIndex() == 2)
+        {
+            _mainStack->setCurrentIndex(3);
+
+            getRadioServer().getSavedDABChannels();
+        }
+        else
+        {
+            _mainStack->setCurrentIndex(0);
+        }    
+    });
+
+    _WebAndDABSwitchButton->clicked().connect([=]
+    {
+        if (_dabMode)
+        {
+            _dabMode = false;
+            _bouquetMode = false;
+            if (app->environment().agentIsMobileWebKit()) 
+                _WebAndDABSwitchButton->setIcon("resources/icons/DABplus_Logo_Farbe_sRGB-221x130.png");
+            else
+                _WebAndDABSwitchButton->setIcon("resources/icons/DABplus_Logo_Farbe_sRGB-32x32.png");
+            _channelContainer->setCurrentIndex(1);
+        }
+        else
+        {
+            _dabMode = true;
+            _bouquetMode = false;
+            if (app->environment().agentIsMobileWebKit())
+                _WebAndDABSwitchButton->setIcon("resources/icons/internet-radio-fm-154x130.png");
+            else
+                _WebAndDABSwitchButton->setIcon("resources/icons/internet-radio-fm-32x32.png");
+            _channelContainer->setCurrentIndex(0);
+        }
+    });
+
+    bouquetsButton->clicked().connect([=]
+    {
+        _channelContainer->setCurrentIndex(2);
+        _bouquetMode = true;
+    });
+
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        header_row->addWidget(move(bouquetEditorButton));
+        header_row->addWidget(move(fileDownloadButton));
+        header_row->addWidget(move(settingsButton));
+    }
+    
     this->addWidget(move(header_row));
 
-    /*****************************************************************************************************
+    /*********************************************************************************************
      *   Service Info
-     *****************************************************************************************************/
+     ********************************************************************************************/
     //auto mMain_row = mMainWidget->addNew<WContainerWidget>();
     auto mMain_row = _mainStack->addNew<WContainerWidget>();
     mMain_row->setStyleClass("row");
@@ -120,18 +215,18 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     serviceInfoRowInMainWidget->setStyleClass("row");
 
     //auto serviceInfoContainer = make_unique<WContainerWidget>();
-    WContainerWidget *serviceInfoContainer = serviceInfoRowInMainWidget->addNew<WContainerWidget>();
-    serviceInfoContainer->setStyleClass("col-xs-12 col-md-12 col-lg-12 text-center");
+    _serviceInfoContainer = serviceInfoRowInMainWidget->addNew<WContainerWidget>();
+    _serviceInfoContainer->setStyleClass("col-xs-12 col-md-12 col-lg-12 text-center");
     
-    _ServiceInfo = serviceInfoContainer->addNew<WText>("Kein Service ausgewählt");
+    _ServiceInfo = _serviceInfoContainer->addNew<WText>("Kein Service ausgewählt");
     _ServiceInfo->setStyleClass("h1");
 
-    _AntennaImg = serviceInfoContainer->addNew<WImage>("resources/icons/antenna_no_signal.png");
+    _AntennaImg = _serviceInfoContainer->addNew<WImage>("resources/icons/antenna_no_signal.png");
 
-    WContainerWidget *serviceInfoSmallContainer = serviceInfoRowInMainWidget->addNew<WContainerWidget>();
-    serviceInfoSmallContainer->setStyleClass("col-xs-12 col-md-12 col-lg-12 text-center");
+    _serviceInfoSmallContainer = serviceInfoRowInMainWidget->addNew<WContainerWidget>();
+    _serviceInfoSmallContainer->setStyleClass("col-xs-12 col-md-12 col-lg-12 text-center");
     
-    _ServiceInfoSmall = serviceInfoSmallContainer->addNew<WText>("Kein Service ausgewählt");
+    _ServiceInfoSmall = _serviceInfoSmallContainer->addNew<WText>("Kein Service ausgewählt");
     _ServiceInfoSmall->setStyleClass("h4");
     
     if (!app->environment().agentIsMobileWebKit()) 
@@ -140,33 +235,31 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
         // between Audio Streaming through a Browser or direct output over a soundcard 
         // (e.g. HiFi Berry)
         auto mediaPlayerRow = infoServiceWidget->addNew<WContainerWidget>();
-        mediaPlayerRow->setStyleClass("row playerframe");
+        mediaPlayerRow->setStyleClass("row playerframe justify-content-center");
 
         auto mediaLeftFromPlayerContainer = make_unique<WContainerWidget>();
-        mediaLeftFromPlayerContainer->setStyleClass("input-widget col-xs-2 col-md-2 col-lg-2 text-center");
+        mediaLeftFromPlayerContainer->setStyleClass("input-widget col-xs-4 col-md-4 col-lg-4");
 
-        WSelectionBox *sb = mediaLeftFromPlayerContainer->addNew<WSelectionBox>();
-        sb->addItem("Browserstreaming");
-        sb->addItem("Intern");
-        sb->setCurrentIndex(0);
+        _audioDevice = mediaLeftFromPlayerContainer->addNew<WSelectionBox>();
+        _audioDevice->addItem("Browser");
+        /* sb->addItem("Intern");
+        sb->setCurrentIndex(0);*/
         
         mediaPlayerRow->addWidget(move(mediaLeftFromPlayerContainer));
 
         //auto mediaPlayerContainer = mediaPlayerRow->addNew<WContainerWidget>();
         _mediaPlayerContainer = mediaPlayerRow->addNew<WStackedWidget>();
-        _mediaPlayerContainer->setStyleClass("col-xs-10 col-md-10 col-lg-10 text-center");
+        _mediaPlayerContainer->setStyleClass("col-xs-8 col-md-8 col-lg-8");
         
         mAudio = _mediaPlayerContainer->addNew<WMediaPlayer>(MediaType::Audio);
-        WLink link("/dab/jplayer");
-        mAudio->addSource(MediaEncoding::WAV, link);
-        mAudio->playbackStarted().connect([=] {
+        /* mAudio->playbackStarted().connect([=] {
             cout << "Waverider::GUI: Lets go..." << endl;
-        });
+        }); */
 
         _infoTextDirect = _mediaPlayerContainer->addNew<WText>("Soundausgabe direkt über die Soundkarte...");
 
-        sb->activated().connect([=] {
-            _mediaPlayerContainer->setCurrentIndex(sb->currentIndex());
+        _audioDevice->activated().connect([=] {
+            _mediaPlayerContainer->setCurrentIndex(_audioDevice->currentIndex());
         });
 
         //mediaPlayerRow->addWidget(move(mediaPlayerContainer));
@@ -177,12 +270,12 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
         
         //infoServiceWidget->addWidget(move(mediaPlayerRow));
         
-        _ChannelContainer->setHeight(800);     
+        _channelContainer->setHeight(800);     
     }
     else
     {
-        cout << "IPhone Anpassungen" << endl;
-        _ChannelContainer->setHeight(800);
+        // IPhone Anpassungen"
+        _channelContainer->setHeight(500);
     }
 
     auto codingLabelRow = infoServiceWidget->addNew<WContainerWidget>();
@@ -192,9 +285,9 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     _codingLabel->setStyleClass("col-xs-11 col-xs-offset-11 col-md-11 col-md-offset-11 col-lg-11 col-lg-offset-11");
     
     /** Radio Channels **/
-    WText* channels = _ChannelContainer->addNew<WText>("<h3>Channels</h3>");
+    WText* channels = _DABChannelContainer->addNew<WText>("<h3>dab+ Channels</h3>");
     channels->setTextAlignment(AlignmentFlag::Center);
-    mChannelMenu = _ChannelContainer->addNew<WMenu>();
+    mChannelMenu = _DABChannelContainer->addNew<WMenu>();
     
     auto _channelScanItem = make_unique<CStationItem>(0xFF, "Dummy Channel (scan)", "0xFF", nullptr);
     _channelScanItem->setStyleClass("h4");
@@ -205,9 +298,14 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     row_middle->addWidget(move(mMainWidget));
     this->addWidget(move(row_middle));
 
-    /*****************************************************************************************************
-     *   MotInfo Widget
-     *****************************************************************************************************/
+    /** Bouquet Channels */
+    _favoriteText = _BouquetChannelContainer->addNew<WText>("<h3>Favoriten</h3>");
+    _favoriteText->setTextAlignment(AlignmentFlag::Center);
+    mBouquetChannelMenu = _BouquetChannelContainer->addNew<WMenu>();
+
+    /********************************************************************************************
+    *   MotInfo Widget
+    ********************************************************************************************/
     auto motServiceWidget = mMain_row->addNew<WContainerWidget>();
     motServiceWidget->setStyleClass("mot-service-widget col-xs-12 col-md-12 col-lg-12");
     
@@ -220,29 +318,36 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     _motrow->setStyleClass("mot-image col-xs-12 col-md-12 col-lg-12 text-center");
 
     _motImg = _motrow->addNew<WImage>("resources/icons/test-pattern-640.png");
+    _motImg->setStyleClass("motimg-himself");
     //_motImg = _motrow->addNew<WImage>("/dab/mot");
 
-    cout << "WaveriderGUI: Channel Container Height: " << _ChannelContainer->height().toPixels() << endl;
-
-    /*****************************************************************************************************
+    /*********************************************************************************************
      *   Settings
-     *****************************************************************************************************/
+     *******************************************************************************************/
     _settings = _mainStack->addNew<CSettingsFormView>(*this);
 
-    /*****************************************************************************************************
+    /*********************************************************************************************
      *   Records - Download
-     *****************************************************************************************************/
+     ********************************************************************************************/
     _records = _mainStack->addNew<CRecords>(*this);
 
-    /*****************************************************************************************************
+    /*********************************************************************************************
+     *   Bouqueteditor
+     *******************************************************************************************/
+    _bouqueteditor = _mainStack->addNew<CBouquetEditorView>(*this);
+
+    /*********************************************************************************************
      *   South Widgets
-     *****************************************************************************************************/
+     ********************************************************************************************/
     auto last_row = make_unique<WContainerWidget>();
     last_row->setStyleClass("row south-widget");
 
-    auto scan = last_row->addNew<WPushButton>("Scan");
-    scan->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
-    scan->clicked().connect(this, &WaveriderGUI::scan_dab);
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        auto scan = last_row->addNew<WPushButton>("Scan");
+        scan->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
+        scan->clicked().connect(this, &WaveriderGUI::scan_dab);
+    }
     
     recordButton = last_row->addNew<WPushButton>("Record");
     recordButton->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
@@ -262,13 +367,16 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     stopAudio->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
     stopAudio->clicked().connect(this, &WaveriderGUI::stopAudio);
 
-    auto quitApp = last_row->addNew<WPushButton>("Quit");
-    quitApp->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
-    quitApp->clicked().connect(this, &WaveriderGUI::quit);
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        auto quitApp = last_row->addNew<WPushButton>("Quit");
+        quitApp->setStyleClass("controlbutton col-xs-6 col-md-3 col-lg-3");
+        quitApp->clicked().connect(this, &WaveriderGUI::quit);
+    }
 
     this->addWidget(move(last_row));
 
-    cout << "User uses: " << app->environment().userAgent() << endl;
+    _radioServer.log("notice", "User uses: " + app->environment().userAgent());
 
     // Connect to Waverider-Server, which helds the reference to radio-controller
     connect();
@@ -280,11 +388,14 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
 
     // If RadioServer still record, we will continue with radio listening
     playAudio();
+
+    // Testing Internetradio
+    //_radioServer.setInternetChannel("");
 }
 
 WaveriderGUI::~WaveriderGUI() 
 {
-    cout << "Aufräumen" << endl;
+    _radioServer.log("notice", " Client finished with cleanup ...");
 }
 
 void WaveriderGUI::connect()
@@ -292,9 +403,94 @@ void WaveriderGUI::connect()
     // Server-Push or WebSockets depends on config in wtconfig.xml in /etc
     if (_radioServer.connect(this, 
         bind(&WaveriderGUI::radioEvent, this, placeholders::_1),
-        bind(&WaveriderGUI::settingsEvent, this, placeholders::_1)))
+        bind(&WaveriderGUI::settingsEvent, this, placeholders::_1),
+        bind(&WaveriderGUI::bouquetEvent, this, placeholders::_1),
+        bind(&WaveriderGUI::recordEvent, this, placeholders::_1),
+        bind(&WaveriderGUI::errorEvent, this, placeholders::_1)))
     {
         WApplication::instance()->enableUpdates(true);
+    }
+}
+
+void WaveriderGUI::recordEvent(const RecordFileEvent& event)
+{
+    _records->initContentPage(event.getResult());
+}
+
+void WaveriderGUI::errorEvent(const ErrorEvent& event)
+{
+    WApplication *app = WApplication::instance();
+
+    auto wmb = make_unique<WMessageBox>("Error", event.getMessage(), Icon::Critical, StandardButton::Ok);
+    wmb->show();
+    WPushButton *ok = wmb->button(StandardButton::Ok);
+    ok->clicked().connect(wmb.get(), &Wt::WDialog::accept);
+    //wmb.get()->finished().connect(this, &MyClass::dialogDone);
+    this->addChild(move(wmb));
+
+    recordButton->setIcon("");
+    recordButton->setText("Record");
+
+    app->triggerUpdate();
+}
+
+void WaveriderGUI::bouquetEvent(const BouquetEditorEvent& e)
+{
+    WApplication *app = WApplication::instance();
+    if (app->environment().agentIsMobileWebKit()) 
+        return;
+
+    if (e.getAction() == BouquetEditorEventAction::savedChannels)
+    {
+        const map<string, string> channels = e.getChannelList();
+
+        _bouqueteditor->getFormModel()->updateWebChannels(channels);
+    }
+    else if (e.getAction() == BouquetEditorEventAction::savedCountries)
+    {
+        _bouqueteditor->getFormModel()->updateFilter2(e.getResult());
+    }
+    else if (e.getAction() == BouquetEditorEventAction::bouquetsLoaded)
+    {
+        _bouqueteditor->getFormModel()->loadBouquetsFromDB(e.getBouquets());
+    }
+    else if (e.getAction() == BouquetEditorEventAction::savedExactCountryCodes)
+    {
+        _bouqueteditor->getFormModel()->updateFilter2(e.getResult());    
+    }
+    else if (e.getAction() == BouquetEditorEventAction::savedCodecs)
+    {
+        _bouqueteditor->getFormModel()->updateFilter2(e.getResult());    
+    }
+    else if (e.getAction() == BouquetEditorEventAction::savedLanguages)
+    {
+        _bouqueteditor->getFormModel()->updateFilter2(e.getResult());    
+    }
+    else if (e.getAction() == BouquetEditorEventAction::savedTags)
+    {
+        _bouqueteditor->getFormModel()->updateFilter2(e.getResult());    
+    }
+    else if (e.getAction() == BouquetEditorEventAction::savedDABChannels)
+    {
+        const map<string, string> channels = e.getChannelList();
+
+        _bouqueteditor->getFormModel()->updateDabChannels(channels);    
+    }
+    else if (e.getAction() == BouquetEditorEventAction::newBouquets)
+    {
+        _channelContainer->setCurrentIndex(2);
+        _bouquetMode = true;
+
+        _mainStack->setCurrentIndex(0);
+
+        vector<WMenuItem*> items = mBouquetChannelMenu->items();
+        for_each(begin(items), end(items), [this](WMenuItem* item) 
+        {
+            CStationItem* menuitem = (CStationItem*) item; 
+            mBouquetChannelMenu->removeItem(item);
+        });
+
+        _radioServer.getBouquets();
     }
 }
 
@@ -302,9 +498,16 @@ void WaveriderGUI::settingsEvent(const SettingsEvent& e)
 {
     WApplication *app = WApplication::instance();
 
+    if (app->environment().agentIsMobileWebKit()) 
+    {
+        // Not on iPhones
+        app->triggerUpdate();
+        return;
+    }
+
     if (e.getAction() == SettingsAction::loadedSettings)
     {
-        _settings->setFormData(e.getDevice(), e.getIPAddress(), e.getPort(), e.getRecordPath());
+        _settings->setFormData(e.getDevice(), e.getIPAddress(), e.getPort(), e.getRecordPath(), e.getRadioBrowserURL(), e.getDoNotReEncode(), e.getStreaming(), e.getStreamingAddress(), e.getStreamingFormat(), e.getRecordFormat(), e.getRetrieveMetadata(), e.getSaveMetadata());
         _recordPath = e.getRecordPath();
 
         _records->initDownloadPage();
@@ -330,19 +533,126 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
         auto item = make_unique<CStationItem>(event.getServiceID(), event.getLabel(), event.getCurrentChannel(), nullptr);
         item->setStyleClass("h4");
         item->channelClicked().connect(this, &WaveriderGUI::setChannel);
-        mChannelMenu->addItem(move(item)); 
+
+        if (!_bouquetMode)
+            mChannelMenu->addItem(move(item)); 
+        else
+            mBouquetChannelMenu->addItem(move(item));
 
         if (_removeChannelScanItem)
         {
             removeChannelScanItem();
         }
     }
+    else if (event.getAction() == EventAction::webChannelFound)
+    {
+        // add WebService
+        auto item = make_unique<CStationItem>(event.getLabel(), event.getWebURL(), nullptr);
+        item->setStyleClass("h4");
+        item->channelClicked().connect(this, &WaveriderGUI::setWebChannel);
+
+        if (!_bouquetMode)
+            mWebChannelMenu->addItem(move(item));
+        else
+            mBouquetChannelMenu->addItem(move(item));
+
+        if (_removeWebChannelScanItem)
+        {
+            removeWebChannelScanItem();
+        }
+    }
+    else if (event.getAction() == EventAction::createNextLink)
+    {
+        // add WebService
+        auto itemNext = make_unique<CStationItem>("Next", "", nullptr);
+        itemNext->setStyleClass("h4");
+        itemNext->channelClicked().connect(this, &WaveriderGUI::setWebChannel);
+        mWebChannelMenu->addItem(move(itemNext));
+    }
+    else if (event.getAction() == EventAction::removeNextLink)
+    {
+        // Delete Scanitem (and others, if exists)
+        vector<WMenuItem*> items = mWebChannelMenu->items();
+        for_each(begin(items), end(items), [this](WMenuItem* item) 
+        { 
+            CStationItem *sitem = (CStationItem*) item;
+            if (sitem->getServiceName() == "Next")
+                mWebChannelMenu->removeItem(item);
+        });    
+    }
+    else if (event.getAction() == EventAction::createPrevLink)
+    {
+        auto itemPrev = make_unique<CStationItem>("Prev", "", nullptr);
+        itemPrev->setStyleClass("h4");
+        itemPrev->channelClicked().connect(this, &WaveriderGUI::setWebChannel);
+        mWebChannelMenu->addItem(move(itemPrev));
+    }
+    else if (event.getAction() == EventAction::removePrevLink)
+    {
+        // Delete Scanitem (and others, if exists)
+        vector<WMenuItem*> items = mWebChannelMenu->items();
+        for_each(begin(items), end(items), [this](WMenuItem* item) 
+        { 
+            CStationItem *sitem = (CStationItem*) item;
+            if (sitem->getServiceName() == "Prev")
+                mWebChannelMenu->removeItem(item);
+        });
+    }
+    else if (event.getAction() == EventAction::bouquetFound)
+    {
+        // add Bouquet
+        auto item = make_unique<CStationItem>(event.getSignalStrengthImage(), nullptr);
+        item->setStyleClass("h4");
+        item->channelClicked().connect(this, &WaveriderGUI::loadBouquetChannels);
+        mBouquetChannelMenu->addItem(move(item));   
+    }
+    else if (event.getAction() == EventAction::backToBouquets)
+    {
+        auto itemPrev = make_unique<CStationItem>("Prev", "", nullptr);
+        itemPrev->setStyleClass("h4");
+        itemPrev->channelClicked().connect(this, &WaveriderGUI::loadBouquets);
+        mBouquetChannelMenu->addItem(move(itemPrev));   
+    }
     else if (event.getAction() == EventAction::channelChange)
     {
         _ServiceInfo->setText(event.getLabel() + " (Kanal: " + event.getCurrentChannel() + ")");
         _AntennaImg->setImageLink("/resources/icons/antenna.gif");
         _ServiceInfoSmall->setText(event.getLabel());
-        mAudio->play();
+
+        _motImg->setImageLink("resources/icons/test-pattern-640-geduld.png");
+
+        /* _mediaPlayerContainer->removeWidget(mAudio);
+        _mediaPlayerContainer->removeWidget(_infoTextDirect);
+        
+        mAudio = _mediaPlayerContainer->addNew<WMediaPlayer>(MediaType::Audio);
+        WLink link("/dab/jplayer");
+        mAudio->addSource(MediaEncoding::WAV, link);
+        mAudio->playbackStarted().connect([=] {
+            cout << "Waverider::GUI: Lets go..." << endl;
+        });
+
+        mAudio->play(); -> not yet! It often happens, that no audio is coming!!! Wait till Audio */
+    }
+    else if (event.getAction() == EventAction::receiveAudio)
+    {
+        if (!app->environment().agentIsMobileWebKit()) 
+        {
+            _radioServer.log("notice", "[CWaveriderGUI::radioEvent] mAudio->play()");
+
+            _mediaPlayerContainer->removeWidget(mAudio);
+            _mediaPlayerContainer->removeWidget(_infoTextDirect);
+
+            mAudio = _mediaPlayerContainer->addNew<WMediaPlayer>(MediaType::Audio);
+            WLink link("/dab/jplayer");
+            mAudio->addSource(MediaEncoding::WAV, link);
+            /* mAudio->playbackStarted().connect([=] {
+                cout << "Waverider::GUI: Lets go..." << endl;
+            });*/
+
+            mAudio->play(); 
+        }    
+
+        _motImg->setImageLink("resources/icons/test-pattern-640.png");
     }
     else if (event.getAction() == EventAction::motChange)
     {
@@ -359,11 +669,42 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
         //_signalImg->setStyleClass("col-xs-1 col-md-1 col-lg-1");
         _signalImg->setImageLink("resources/icons/" + event.getSignalStrengthImage());
     }
+    else if (event.getAction() == EventAction::newTitle)
+    {
+        _ServiceInfoSmall->setText(event.getNewTitle());
+    }
     else if (event.getAction() == EventAction::channelScan)
     {
         _ServiceInfo->setText("Scanning Channel " + event.getChannelScan() + " ... ");
         _ServiceInfoSmall->setText("Found Channels: " + event.getStationCount());
         _AntennaImg->setImageLink("/resources/icons/antenna.gif");
+    }
+    else if (event.getAction() == EventAction::internetCountryCount)
+    {
+        auto progressBar = (WProgressBar*) _serviceInfoSmallContainer->widget(_progressBarIndex);
+        progressBar->setRange(0.0, 100.0);
+        _internetCountedCountries = event.getCountryCount();
+    }
+    else if (event.getAction() == EventAction::internetCountryScan)
+    {
+        _ServiceInfo->setText("Scanning Channel " + event.getChannelScan() + " (" + event.getLabel() + ")... "); 
+
+        auto progressBar = (WProgressBar*) _serviceInfoSmallContainer->widget(_progressBarIndex);
+        progressBar->setValue((event.getCountryCount() / (double)_internetCountedCountries)*100);
+    }
+    else if (event.getAction() == EventAction::internetScanFinished)
+    {
+        _ServiceInfo->setText("Kein Service ausgewählt");
+        _ServiceInfoSmall->setText("Kein Service ausgewählt");
+
+        auto progressBar = (WProgressBar*) _serviceInfoSmallContainer->widget(_progressBarIndex);
+        _serviceInfoSmallContainer->removeWidget(progressBar);
+
+        _radioServer.getWebChannels(InternetChannelScroll::nothing);
+    }
+    else if (event.getAction() == EventAction::soundcardFound)
+    {
+        _audioDevice->addItem(event.getSoundDevice());
     }
 
     app->triggerUpdate();
@@ -379,6 +720,23 @@ void WaveriderGUI::scan_dab()
     });
 
     _radioServer.scan_dab();
+}
+
+void WaveriderGUI::scan_internet()
+{
+    // Remove Text and show a progress bar
+    _ServiceInfoSmall->setText("");
+    auto progressBar = _serviceInfoSmallContainer->addNew<WProgressBar>();
+    _progressBarIndex = _serviceInfoSmallContainer->indexOf(progressBar);
+
+    // Delete Scanitem (and others, if exists)
+    vector<WMenuItem*> items = mWebChannelMenu->items();
+    for_each(begin(items), end(items), [this](WMenuItem* item) 
+    { 
+        mWebChannelMenu->removeItem(item);
+    });
+
+    _radioServer.scan_internet();   
 }
 
 void WaveriderGUI::record()
@@ -412,8 +770,24 @@ void WaveriderGUI::removeChannelScanItem()
     });
 }
 
+void WaveriderGUI::removeWebChannelScanItem()
+{
+    vector<WMenuItem*> items = mWebChannelMenu->items();
+    for_each(begin(items), end(items), [this](WMenuItem* item) 
+    {
+        CStationItem* menuitem = (CStationItem*) item; 
+        if (menuitem->getChannelID() == "0xFF")
+        {
+            mWebChannelMenu->removeItem(item);
+            _removeWebChannelScanItem = false;
+        }
+    });
+}
+
 void WaveriderGUI::initialiseRadioChannels()
 {
+    WApplication *app = WApplication::instance();
+
     // Delete Scanitem (and others, if exists)
     vector<WMenuItem*> items = mChannelMenu->items();
     for_each(begin(items), end(items), [this](WMenuItem* item) 
@@ -425,78 +799,204 @@ void WaveriderGUI::initialiseRadioChannels()
         }
     });
 
-    cout << "Get saved Channels from DB" << endl; 
     _stationTimer->stop();
     _radioServer.getDABChannels();
-    _radioServer.getSettings();
+    _radioServer.getWebChannels(InternetChannelScroll::nothing);
+    _radioServer.getBouquets();
+    
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        _radioServer.getSettings();
+        _radioServer.getBouquetsInDB();   
+    }
+
+#if defined(HAVE_ALSA)
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        _radioServer.getRadioController()->postFoundedSoundCards();
+    }
+#endif
 }
 
 void WaveriderGUI::handlePathChange()
 {
     WApplication *app = WApplication::instance();
-    cout << "Internal Path: " << app->internalPath() << endl;
+    _radioServer.log("notice", "Internal Path: " + app->internalPath());
 }
 
 void WaveriderGUI::setChannel(WMenuItem* item)
 {
-    if (mAudio->playing())
-    {
-        mAudio->pause();
-        _mediaPlayerContainer->removeWidget(mAudio);
-        _mediaPlayerContainer->removeWidget(_infoTextDirect);
-        
-        mAudio = _mediaPlayerContainer->addNew<WMediaPlayer>(MediaType::Audio);
-        WLink link("/dab/jplayer");
-        mAudio->addSource(MediaEncoding::WAV, link);
-        mAudio->playbackStarted().connect([=] {
-            cout << "Waverider::GUI: Lets go..." << endl;
-        });
+    WApplication *app = WApplication::instance();
 
-        _infoTextDirect = _mediaPlayerContainer->addNew<WText>("Soundausgabe direkt über die Soundkarte...");
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        if (mAudio->playing())
+        {
+            mAudio->pause();
+
+            _infoTextDirect = _mediaPlayerContainer->addNew<WText>("Soundausgabe direkt über die Soundkarte...");
+        }
     }
 
+    // Does the Server still plays because of an another frontend?
+    if (_radioServer.isPlaying())
+    {
+        _radioServer.shutup();
+    }
+    
     CStationItem* sitem = (CStationItem*) item;
-    cout << "Clicked:"
-         << " serviceID: " << sitem->getServiceIDASHexString() 
-         << " serviceName: " << sitem->getServiceName() 
-         << " channelID: " << sitem->getChannelID() << endl; 
+    
+    _lastSelectedRadioStation = sitem;
 
     _radioServer.setChannel(sitem->getServiceID(), sitem->getServiceName(), sitem->getChannelID());
 }
 
+void WaveriderGUI::setWebChannel(WMenuItem* item)
+{
+    CStationItem* sitem = (CStationItem*) item;
+
+    if (sitem->getServiceName().compare("Prev") == 0)
+    {
+        vector<WMenuItem*> items = mWebChannelMenu->items();
+        for_each(begin(items), end(items), [this](WMenuItem* item) 
+        {
+            CStationItem* menuitem = (CStationItem*) item; 
+            mWebChannelMenu->removeItem(item);
+        });
+        _radioServer.getWebChannels(InternetChannelScroll::prev);    
+    }
+    else if (sitem->getServiceName().compare("Next") == 0)
+    {
+        vector<WMenuItem*> items = mWebChannelMenu->items();
+        for_each(begin(items), end(items), [this](WMenuItem* item) 
+        {
+            CStationItem* menuitem = (CStationItem*) item; 
+            mWebChannelMenu->removeItem(item);
+        });
+        _radioServer.getWebChannels(InternetChannelScroll::forward);
+    }
+    else
+    {
+        WApplication *app = WApplication::instance();
+        if (!app->environment().agentIsMobileWebKit()) 
+        {
+            if (mAudio->playing())
+            {
+                mAudio->pause();
+
+                _infoTextDirect = _mediaPlayerContainer->addNew<WText>("Soundausgabe direkt über die Soundkarte...");
+            }
+        }
+
+        _radioServer.shutup();
+
+        _lastSelectedRadioStation = sitem;
+
+        _radioServer.setWebChannel(sitem->getServiceName(), sitem->getWebURL());
+    }
+}
+
+void WaveriderGUI::loadBouquetChannels(WMenuItem* item)
+{
+    CStationItem* sitem = (CStationItem*) item;
+
+    vector<WMenuItem*> items = mBouquetChannelMenu->items();
+    for_each(begin(items), end(items), [this](WMenuItem* item) 
+    {
+        CStationItem* menuitem = (CStationItem*) item; 
+        mBouquetChannelMenu->removeItem(item);
+    });
+
+    _favoriteText->setText("<h3>Favoriten: " + sitem->getServiceName()+"</h3>");
+
+    _radioServer.loadChannelsInBouquet(sitem->getServiceName());
+}
+
+void WaveriderGUI::loadBouquets()
+{
+    vector<WMenuItem*> items = mBouquetChannelMenu->items();
+    for_each(begin(items), end(items), [this](WMenuItem* item) 
+    {
+        CStationItem* menuitem = (CStationItem*) item; 
+        mBouquetChannelMenu->removeItem(item);
+    });
+
+    _favoriteText->setText("<h3>Favoriten</h3>");
+
+    _radioServer.getBouquets();
+}
+
 void WaveriderGUI::playAudio()
 {
+    WApplication *app = WApplication::instance();
+
     if (_radioServer.isRecording() || _radioServer.isPlaying())
     {
         _radioServer.reactivateRecordingChannel();
 
-        _mediaPlayerContainer->removeWidget(mAudio);
-        _mediaPlayerContainer->removeWidget(_infoTextDirect);
-            
-        mAudio = _mediaPlayerContainer->addNew<WMediaPlayer>(MediaType::Audio);
-        WLink link("/dab/jplayer");
-        mAudio->addSource(MediaEncoding::WAV, link);
-        mAudio->playbackStarted().connect([=] {
-            cout << "Waverider::GUI: Lets go..." << endl;
-        });
-        mAudio->play();
+        if (!app->environment().agentIsMobileWebKit()) 
+        {
+            _mediaPlayerContainer->removeWidget(mAudio);
+            _mediaPlayerContainer->removeWidget(_infoTextDirect);
+                
+            mAudio = _mediaPlayerContainer->addNew<WMediaPlayer>(MediaType::Audio);
+            WLink link("/dab/jplayer");
+            mAudio->addSource(MediaEncoding::WAV, link);
+            /* mAudio->playbackStarted().connect([=] {
+                cout << "Waverider::GUI: Lets go..." << endl;
+            });*/
+            mAudio->play();
 
-        _infoTextDirect = _mediaPlayerContainer->addNew<WText>("Soundausgabe direkt über die Soundkarte...");
+            _infoTextDirect = _mediaPlayerContainer->addNew<WText>("Soundausgabe direkt über die Soundkarte...");
+        }
     }
 }
 
 void WaveriderGUI::stopAudio()
 {
-    mAudio->stop();
+    WApplication *app = WApplication::instance();
+    if (!app->environment().agentIsMobileWebKit()) 
+    {
+        mAudio->stop();
+    }
 
-    _radioServer.stop();
+    /* if (_lastSelectedRadioStation != nullptr)
+    {
+        if (_lastSelectedRadioStation->getBroadcastType() == "dab+")
+            _radioServer.stop();
+        else 
+            _radioServer.webStop();
+    }
+    else
+    {*/
+        if (_radioServer.isPlaying())
+        {
+            // WebApp was started with an other device
+            _radioServer.shutup();
+        }
+    //}
 }
 
 void WaveriderGUI::quit()
 {
     this->stopAudio();
 
-    cout << "Quit the App" << endl;
+    /* if (_lastSelectedRadioStation != nullptr)
+    {
+        if (_lastSelectedRadioStation->getBroadcastType() == "dab+")
+            _radioServer.stop();
+        else 
+            _radioServer.webStop();
+    } */
+
+    if (_radioServer.isPlaying())
+    {
+        // WebApp was started with an other device
+        _radioServer.shutup();
+    }
+
+    _radioServer.log("notice", "Client quits the App ...");
+
     WApplication *app = WApplication::instance();
     app->quit();
 }

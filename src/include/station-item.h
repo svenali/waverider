@@ -34,13 +34,21 @@ using namespace Wt;
 class CStationItem : public WMenuItem
 {
     public:
+        CStationItem(string name, unique_ptr< WWidget > contents=nullptr);
         CStationItem(uint32_t serviceID, string serviceName, string channelID, 
         unique_ptr< WWidget > contents=nullptr);
+        CStationItem(string serviceName, string url, unique_ptr<WWidget> contents);
+        ~CStationItem();
 
+        // dab+
         uint32_t getServiceID() { return _serviceID; };
         string getChannelID() { return _channelID; };
         string getServiceName() { return _serviceName; };
         string getServiceIDASHexString();
+
+        // web
+        string getBroadcastType() { return _type; };
+        string getWebURL() { return _url; };
 
         Signal<CStationItem*>& channelClicked() { return _newStation; };
         Signal<CStationItem*> _newStation; 
@@ -48,9 +56,14 @@ class CStationItem : public WMenuItem
     private:
         void stationLinkClicked();
 
+        // dab+
         uint32_t _serviceID;
         string _serviceName;
         string _channelID;
+
+        // web
+        string _type;
+        string _url;
 };
 
 #endif

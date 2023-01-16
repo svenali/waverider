@@ -19,11 +19,39 @@
  */
 #include "station-item.h"
 
+CStationItem::CStationItem(string name, unique_ptr< WWidget > contents)
+: WMenuItem(name, move(contents)),
+  _serviceID(0x1),
+  _serviceName(name),
+  _channelID("0XX"),
+  _type("bouquet"),
+  _url("")
+{
+    /* auto serviceStationWidget = make_unique<WContainerWidget>();
+    serviceStationWidget->setStyleClass("row");
+    
+    auto infoContainer = make_unique<WContainerWidget>();
+    infoContainer->setStyleClass("container-fluid");
+    
+    auto urlString = make_unique<WText>(this->getWebURL());
+    urlString->setStyleClass("col-xs-12 col-md-12 col-lg-12");
+    infoContainer->addWidget(move(urlString));
+
+    serviceStationWidget->addStyleClass("serviceStation-web");
+    serviceStationWidget->addWidget(move(infoContainer)); */
+
+    this->clicked().connect(this, &CStationItem::stationLinkClicked);
+
+    //this->addWidget(move(serviceStationWidget)); 
+}
+
 CStationItem::CStationItem(uint32_t serviceID, string serviceName, string channelID, unique_ptr<WWidget> contents)
 : WMenuItem(serviceName, move(contents)),
   _serviceID(serviceID),
   _serviceName(serviceName),
-  _channelID(channelID)
+  _channelID(channelID),
+  _url(""),
+  _type("dab+")
 {
     auto serviceStationWidget = make_unique<WContainerWidget>();
     serviceStationWidget->setStyleClass("row");
@@ -45,6 +73,41 @@ CStationItem::CStationItem(uint32_t serviceID, string serviceName, string channe
     this->clicked().connect(this, &CStationItem::stationLinkClicked);
 
     this->addWidget(move(serviceStationWidget));
+}
+
+CStationItem::CStationItem(string serviceName, string url, unique_ptr<WWidget> contents)
+: WMenuItem(serviceName, move(contents)),
+  _serviceID(0x0),
+  _serviceName(serviceName),
+  _channelID("00X"),
+  _type("web"),
+  _url(url)
+{
+    auto serviceStationWidget = make_unique<WContainerWidget>();
+    serviceStationWidget->setStyleClass("row");
+    
+    auto infoContainer = make_unique<WContainerWidget>();
+    infoContainer->setStyleClass("container-fluid");
+    
+    auto urlString = make_unique<WText>(this->getWebURL());
+    urlString->setStyleClass("col-xs-12 col-md-12 col-lg-12");
+    infoContainer->addWidget(move(urlString));
+
+    /* auto channelIDString = make_unique<WText>(channelID);
+    channelIDString->setStyleClass("col-xs-8 col-md-8 col-lg-8");
+    infoContainer->addWidget(move(channelIDString)); */
+
+    serviceStationWidget->addStyleClass("serviceStation-web");
+    serviceStationWidget->addWidget(move(infoContainer));
+
+    this->clicked().connect(this, &CStationItem::stationLinkClicked);
+
+    this->addWidget(move(serviceStationWidget));
+}
+
+CStationItem::~CStationItem()
+{
+
 }
 
 void CStationItem::stationLinkClicked()

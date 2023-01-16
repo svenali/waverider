@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF8"?> 
+<messages>
+  <message id="settings">
+    <legend>${title}</legend>
+    <div class="form-horizontal">
+      <div class="form-group">
+        <label class="device-label col-sm-2" for="${id:device}">
+          Radio Device
+        </label>
+        <div class="col-sm-5">
+          ${device}
+        </div>
+      </div>
+      <div class="form-group">
+        ${<if-register>} 
+          <label class="address-label col-sm-2" for="${id:adress}">
+            IP Adress of RTL Device
+          </label>
+          <div class="col-sm-4">
+            ${address}
+          </div>  
+          <label class="port-label col-sm-1" for="${id:port}">
+            Port
+          </label>
+          <div class="col-sm-1">
+            ${port}
+          </div>  
+        ${</if-register>}  
+      </div>
+      <div class="form-group">
+        <label class="device-label col-sm-2" for="${id:recordpath}">
+          Record Path
+        </label>
+        <div class="col-sm-5">
+          ${recordpath}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="radiobrowser-url-label col-sm-2" for="${id:radiobrowserurl}">
+          Radio Browser URL
+        </label>
+        <div class="col-sm-5">
+          ${radiobrowserurl}
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-2">
+          ${submit-button}
+        </div>
+        <div class="col-sm-2">
+          ${cancel-button}
+        </div>
+      </div>
+    </div>
+  </message>
+  <!-- <message id="internetchannels">
+    <legend>${title}</legend>
+    <div class="form-horizontal">
+      <div class="form-group">
+        <label class="station-name-label col-sm-2" for="${id:station_name}">
+          Station Name
+        </label>
+        <div class="col-sm-5">
+          ${station_name}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="url-label col-sm-2" for="${id:url}">
+          URL
+        </label>
+        <div class="col-sm-5">
+          ${url}
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-2">
+          ${submit-button}
+        </div>
+      </div>
+    </div>
+  </message> -->
+  <message id="bouqueteditor">
+    <legend>${title-1}</legend>
+    <div class="form-horizontal">
+      <div class="form-group">
+        <label class="bouquet-name-label col-sm-1" for="${id:bouquet_name}">
+          Bouquet Name
+        </label>
+        <div class="col-sm-2">
+          ${bouquet-name}
+        </div>
+        <div class="col-sm-2">
+          ${add-bouquet-button}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="bouquet-label col-sm-1" for="${id:bouquets}">
+          Bouquets
+        </label>
+        <div class="col-sm-2">
+          ${bouquets}
+        </div>  
+        <div class="col-sm-2">
+          ${bouquet-remove-button}
+        </div>
+      </div>
+    </div>
+    <legend>${title-2}</legend>
+    <div class="form-horizontal">
+      <div class="form-group">
+        <label class="bouquets-label col-sm-1" for="${id:bouquet-selection}">
+          Bouquet Auswahl
+        </label>
+        <div class="col-sm-2">
+          ${bouquet-selection}
+        </div>
+        <label class="bouquets-label col-sm-offset-3 col-sm-1" for="${id:bouquet-selection}">
+          Filter by
+        </label>
+        <div class="col-sm-2">
+          ${filter-1}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="bouquets-label col-sm-offset-6 col-sm-1" for="${id:bouquet-selection}">
+          Filter by
+        </label>
+        <div class="col-sm-2">
+          ${filter-2}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="channels-in-bouquet-label col-sm-1" for="${id:channels-in-bouquet}">
+          Channel in Bouquet
+        </label>
+        <div class="col-sm-2">
+          ${channels-in-bouquet}
+        </div>
+        <label class="dab-channels col-sm-1" for="${id:dab-channels}">
+          dab+ Channels
+        </label>
+        <div class="col-sm-2">
+          ${dab-channels}
+        </div>
+        <label class="web-channels col-sm-1" for="${id:web-channels}">
+          web Channels
+        </label>
+        <div class="col-sm-2">
+          ${web-channels}
+        </div>
+        <div class="col-sm-3">
+          <div class="form-horizontal">
+            <div class="form-group">  
+              <label class="station-name-label col-sm-2" for="${id:station_name}">
+                Station Name
+              </label>
+              <div class="col-sm-5">
+                ${station_name}
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="url-label col-sm-2" for="${id:url}">
+                URL
+              </label>
+              <div class="col-sm-5">
+                ${url}
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="url-label col-sm-2" for="${id:url}">
+                URL Logo
+              </label>
+              <div class="col-sm-5">
+                ${url-logo}
+              </div>
+            </div>
+          </div> 
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-1 col-sm-2">
+          ${channels-in-bouquet-remove-button}
+        </div>
+        <div class="col-sm-offset-1 col-sm-2">
+          ${dab-channels-add-button}
+        </div>
+        <div class="col-sm-offset-1 col-sm-2">
+          ${web-channels-add-button}
+        </div>
+        <div class="col-sm-2">
+          ${add-station-button}
+        </div>
+      </div>
+      <legend>${title-3}</legend>
+      <div class="form-group">
+        <div class="col-sm-2">
+          ${submit-button}
+        </div>
+        <div class="col-sm-2">
+          ${cancel-button}
+        </div>
+      </div>
+    </div>
+  </message>
+</messages>

@@ -24,25 +24,47 @@
 
 #include <Wt/Dbo/Dbo.h>
 
+#include "cdbointernetchannel.h"
+#include "cdbobouquet.h"
+
 namespace dbo = Wt::Dbo;
 
 using namespace std;
 
+class CDBOInternetChannel;
+class CDBOBouquet;
 class CService
 {
     public:
         CService();
 
+        // dab+
         string _serviceID;
         string _label;
         string _currentChannel;  
 
+        // web, type = dab+ | web
+        string _type;
+        string _url;
+        //string _countrycode;
+
+        dbo::weak_ptr<CDBOInternetChannel> _internetChannel;
+        dbo::collection< dbo::ptr<CDBOBouquet> > _bouquets;
+
         // must declare AND implement in this header file
         template<class Action> void persist(Action& a)
         {
+            // dab+
             dbo::field(a, _serviceID, "serviceID");
             dbo::field(a, _label, "Label");
             dbo::field(a, _currentChannel, "Channel"); 
+            
+            // web radio
+            dbo::field(a, _type, "Type");
+            dbo::field(a, _url, "URL");
+            //dbo::field(a, _countrycode, "countrycode");
+            dbo::hasOne(a, _internetChannel);
+            dbo::hasMany(a, _bouquets, dbo::ManyToMany, "channel_belongsTo_bouquet");
         }
 };
 

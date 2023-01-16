@@ -66,6 +66,8 @@ void DecoderAdapter::addtoFrame(uint8_t *v)
         }
     }
 
+    //myInterface.onNewCompressedAudio(data.data(), length);
+
     decoder->Feed(data.data(), length);
 
     if (dumpFile) {
@@ -90,6 +92,11 @@ void DecoderAdapter::StartAudio(int samplerate, int channels, bool float32)
     audioChannels = channels;
 }
 
+void DecoderAdapter::PutCompressedAudio(uint8_t* data, size_t len)
+{
+    myInterface.onNewCompressedAudio(data, len, true);
+}
+
 void DecoderAdapter::PutAudio(const uint8_t *data, size_t len)
 {
     // Then len is given in bytes. For stereo it is the double times of mono.
@@ -112,6 +119,8 @@ void DecoderAdapter::PutAudio(const uint8_t *data, size_t len)
             audio[i*2+1] = sample;
         }
     }
+
+    //myInterface.onNewCompressedAudio((uint8_t*)audio.data(), bufferSize*2);
 
     myInterface.onNewAudio(
         std::move(audio),

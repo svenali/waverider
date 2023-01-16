@@ -144,6 +144,7 @@ class RingBuffer
         void onDroppedData(int32_t droppedElements) {
             (void) droppedElements;
             // In case a warning should be output, do it here
+            //std::cerr << "WARNING! RingBuffer has to drop Elements ..." << std::endl;
         }
 
     public:

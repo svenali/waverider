@@ -28,6 +28,23 @@
         ${</if-register>}  
       </div>
       <div class="form-group">
+        <label class="radiobrowser-url-label col-sm-2" for="${id:radiobrowserurl}">
+          Radio Browser URL
+        </label>
+        <div class="col-sm-5">
+          ${radiobrowserurl}
+        </div>
+      </div>
+      <div class="form-group">
+          <label class="device-label col-sm-2" for="${id:metadata}">
+            Retrieve metadata
+          </label>
+          <div class="col-sm-5">
+            ${metadata}
+          </div>
+        </div>
+      <legend>${title-save}</legend>
+      <div class="form-group">
         <label class="device-label col-sm-2" for="${id:recordpath}">
           Record Path
         </label>
@@ -36,7 +53,181 @@
         </div>
       </div>
       <div class="form-group">
+        <label class="device-label col-sm-2" for="${id:do-not-reencode-ichannels}">
+          Do not reencode Internet-Channels 
+        </label>
+        <div class="col-sm-5">
+          ${donot-reencode-ichannels}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="device-label col-sm-2" for="${id:format}">
+          Format
+        </label>
+        <div class="col-sm-5">
+          ${format}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="device-label col-sm-2" for="${id:save-metadata}">
+          Save metadata
+        </label>
+        <div class="col-sm-5">
+          ${save-metadata}
+        </div>
+      </div>
+      <legend>${title-export}</legend>
+        <div class="form-group">
+          <label class="device-label col-sm-2" for="${id:streaming}">
+            Streaming
+          </label>
+          <div class="col-sm-5">
+            ${streaming}
+          </div>
+        </div>
+        ${<streaming-condition>}
+          <div class="form-group">
+            <label class="device-label col-sm-2" for="${id:streaming-address}">
+              Streaming Address
+            </label>
+            <div class="col-sm-5">
+              ${streaming-address}
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="device-label col-sm-2" for="${id:streaming-format}">
+              Streaming Format (only for DAB+, Internet-Channels will streamed directly!)
+            </label>
+            <div class="col-sm-5">
+              ${streaming-format}
+            </div>
+          </div>
+        ${</streaming-condition>}
+      <div class="form-group">
         <div class="col-sm-offset-2 col-sm-2">
+          ${submit-button}
+        </div>
+        <div class="col-sm-2">
+          ${cancel-button}
+        </div>
+      </div>
+    </div>
+  </message>
+  <message id="bouqueteditor">
+    <legend>${title-1}</legend>
+    <div class="form-horizontal">
+      <div class="form-group">
+        <label class="bouquet-name-label col-sm-1" for="${id:bouquet_name}">
+          Bouquet Name
+        </label>
+        <div class="col-sm-2">
+          ${bouquet-name}
+        </div>
+        <div class="col-sm-2">
+          ${add-bouquet-button}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="bouquet-label col-sm-1" for="${id:bouquets}">
+          Bouquets
+        </label>
+        <div class="col-sm-2">
+          ${bouquets}
+        </div>  
+        <div class="col-sm-2">
+          ${bouquet-remove-button}
+        </div>
+      </div>
+    </div>
+    <legend>${title-2}</legend>
+    <div class="form-horizontal">
+      <div class="form-group">
+        <label class="bouquets-label col-sm-1" for="${id:bouquet-selection}">
+          Bouquet Auswahl
+        </label>
+        <div class="col-sm-2">
+          ${bouquet-selection}
+        </div>
+        <label class="bouquets-label col-sm-offset-3 col-sm-1" for="${id:bouquet-selection}">
+          Filter by
+        </label>
+        <div class="col-sm-2">
+          ${filter-1}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="bouquets-label col-sm-offset-6 col-sm-1" for="${id:bouquet-selection}">
+          Filter by
+        </label>
+        <div class="col-sm-2">
+          ${filter-2}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="channels-in-bouquet-label col-sm-1" for="${id:channels-in-bouquet}">
+          Channel in Bouquet
+        </label>
+        <div class="col-sm-2">
+          ${channels-in-bouquet}
+        </div>
+        <label class="dab-channels col-sm-1" for="${id:dab-channels}">
+          dab+ Channels
+        </label>
+        <div class="col-sm-2">
+          ${dab-channels}
+        </div>
+        <label class="web-channels col-sm-1" for="${id:web-channels}">
+          web Channels
+        </label>
+        <div class="col-sm-2">
+          ${web-channels}
+        </div>
+        <div class="col-sm-3">
+          <div class="form-horizontal">
+            <div class="form-group">  
+              <label class="station-name-label col-sm-2" for="${id:station_name}">
+                Station Name
+              </label>
+              <div class="col-sm-5">
+                ${station_name}
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="url-label col-sm-2" for="${id:url}">
+                URL
+              </label>
+              <div class="col-sm-5">
+                ${url}
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="url-label col-sm-2" for="${id:url}">
+                URL Logo
+              </label>
+              <div class="col-sm-5">
+                ${url-logo}
+              </div>
+            </div>
+          </div> 
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-1 col-sm-2">
+          ${channels-in-bouquet-remove-button}
+        </div>
+        <div class="col-sm-offset-1 col-sm-2">
+          ${dab-channels-add-button}
+        </div>
+        <div class="col-sm-offset-1 col-sm-2">
+          ${web-channels-add-button}
+        </div>
+        <div class="col-sm-2">
+          ${add-station-button}
+        </div>
+      </div>
+      <legend>${title-3}</legend>
+      <div class="form-group">
+        <div class="col-sm-2">
           ${submit-button}
         </div>
         <div class="col-sm-2">

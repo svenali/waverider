@@ -24,6 +24,7 @@
 #include <Wt/WTemplateFormView.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WComboBox.h>
+#include <Wt/WCheckBox.h>
 
 #include "waverider-gui.h"
 #include "csettingsform.h"
@@ -32,6 +33,7 @@ using namespace std;
 using namespace Wt;
 
 class WaveriderGUI;
+
 class CSettingsFormView : public WTemplateFormView
 {
     public:
@@ -39,7 +41,7 @@ class CSettingsFormView : public WTemplateFormView
         virtual ~CSettingsFormView();
 
         // will be called from GUI over RadioServer
-        void setFormData(string device, string ipaddress, string port, string recordPath);
+        void setFormData(string device, string ipaddress, string port, string recordPath, string radioBrowserURL, string donotreencode, string streaming, string streamingAddress, string streamingFormat, string recordFormat, string metadata, string saveMetadata);
 
     private:
         WaveriderGUI& _rider_gui;

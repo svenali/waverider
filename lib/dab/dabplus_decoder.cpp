@@ -2,6 +2,8 @@
     DABlin - capital DAB experience
     Copyright (C) 2015-2018 Stefan Pöschel
 
+	Copyright (C) 2022 Dr. Sven Alisch
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -47,6 +49,9 @@ SuperframeFilter::~SuperframeFilter() {
 }
 
 void SuperframeFilter::Feed(const uint8_t *data, size_t len) {
+	// save uncompressed Data
+	//observer->PutCompressedAudio((uint8_t*)data, len);
+
 	// check frame len
 	if(frame_len) {
 		if(frame_len != len) {
@@ -92,6 +97,8 @@ void SuperframeFilter::Feed(const uint8_t *data, size_t len) {
 	memcpy(sf, sf_raw, sf_len);
 	rs_dec.DecodeSuperframe(sf, sf_len, total_corr_count, uncorr_errors);
 
+	//observer->PutCompressedAudio(sf_raw, sf_len);
+
 	// forward statistics if errors present
 	if(total_corr_count || uncorr_errors)
 		observer->FECInfo(total_corr_count, uncorr_errors);
@@ -135,6 +142,7 @@ void SuperframeFilter::Feed(const uint8_t *data, size_t len) {
 			aac_dec->DecodeFrame(au_data, au_len);
 		CheckForPAD(au_data, au_len);
 		ProcessUntouchedStream(au_data, au_len);
+		//observer->PutCompressedAudio(au_data, au_len);
 	}
 
 	// ensure getting a complete new Superframe
@@ -449,6 +457,9 @@ AACDecoderFAAD2::~AACDecoderFAAD2() {
 }
 
 void AACDecoderFAAD2::DecodeFrame(uint8_t *data, size_t len) {
+	// save uncompressed Data
+	//observer->PutCompressedAudio(data, len);
+	
 	// decode audio
 	uint8_t* output_frame = (uint8_t*) NeAACDecDecode(handle, &dec_frameinfo, data, len);
 	if(dec_frameinfo.error)
@@ -460,6 +471,11 @@ void AACDecoderFAAD2::DecodeFrame(uint8_t *data, size_t len) {
 
 	if(dec_frameinfo.bytesconsumed != len)
 		throw std::runtime_error("AACDecoderFAAD2: NeAACDecDecode did not consume all bytes");
+
+	// save uncompressed Data (it does not work while streaming, because of ffmpeg/vlc so
+	// I copy NULL values, so the controller knows, he has to serve wav or to transcode
+	// it into a readable streamable format)
+	observer->PutCompressedAudio(NULL, len);
 
 	observer->PutAudio(output_frame, dec_frameinfo.samples * (float32 ? 4 : 2));
 }
@@ -520,6 +536,9 @@ void AACDecoderFDKAAC::DecodeFrame(uint8_t *data, size_t len) {
 	uint8_t* input_buffer[1] {data};
 	const unsigned int input_buffer_size[1] {(unsigned int) len};
 	unsigned int bytes_valid = len;
+
+	// save uncompressed Data
+	//observer->PutCompressedAudio(data, len);
 
 	// fill internal input buffer
 	AAC_DECODER_ERROR result = aacDecoder_Fill(handle, input_buffer, input_buffer_size, &bytes_valid);

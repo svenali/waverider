@@ -37,12 +37,30 @@ class CSettings
         string _radioDevice;
         string _ipaddress;
         string _port;
-        string _recordPath;  
+        string _recordPath; 
+        string _radioBrowserURL;
+
+        string _doNotReEncodeIChannels;
+        string _recordFormat;
+        string _streaming;
+        string _streamingAddress;
+        string _streamingFormat;
+
+        string _metadata;    // Retrieve Metadata
+        string _saveMetadata;
 
         void setRadioDevice(string radioDevice) { _radioDevice = radioDevice; }
         void setIPAddress(string ipaddress) { _ipaddress = ipaddress; }
         void setPort(string port) { _port = port; }
         void setRecordPath(string recordPath) { _recordPath = recordPath; }
+        void setRadioBrowserURL(string radioBrowserURL) { _radioBrowserURL = radioBrowserURL; }
+        void setDoNotReEncodeIChannels(string reencoding) { _doNotReEncodeIChannels = reencoding; }
+        void setRecordFormat(string format) { _recordFormat = format; }
+        void setStreaming(string streaming) { _streaming = streaming; }
+        void setStreamingAddress(string saddress) { _streamingAddress = saddress; }
+        void setStreamingFormat(string sformat) { _streamingFormat = sformat; }
+        void setRetrieveMetadata(string metadata) { _metadata = metadata; }
+        void setSaveMetadata(string saveMetadata) { _saveMetadata = saveMetadata; }
 
         // must declare AND implement in this header file
         template<class Action> void persist(Action& a)
@@ -51,6 +69,16 @@ class CSettings
             dbo::field(a, _ipaddress, "ipaddress");
             dbo::field(a, _port, "port"); 
             dbo::field(a, _recordPath, "recordPath");
+            dbo::field(a, _radioBrowserURL, "radioBrowserURL");
+
+            dbo::field(a, _doNotReEncodeIChannels, "doNotReEncodeIChannels");
+            dbo::field(a, _recordFormat, "recordFormat");
+            dbo::field(a, _streaming, "streaming");
+            dbo::field(a, _streamingAddress, "streamingAddress");
+            dbo::field(a, _streamingFormat, "streamingFormat");
+
+            dbo::field(a, _metadata, "retrieveMetadata");
+            dbo::field(a, _saveMetadata, "saveMetadata");
         }
 };
 

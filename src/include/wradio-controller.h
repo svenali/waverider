@@ -25,9 +25,15 @@
 #include <Wt/WDate.h>
 #include <Wt/WTime.h>
 #include <Wt/WDateTime.h>
+#include <Wt/WIOService.h>
 
 #include <dirent.h>
 #include <cstring>
+#include <cerrno>
+
+#if defined(HAVE_ALSA)
+#include "calsaoutput.h"
+#endif
 
 #include "dab-constants.h"
 #include "radio-receiver.h"
@@ -35,18 +41,35 @@
 #include "channels.h"
 #include "input/input_factory.h"
 #include "input/rtl_tcp.h"
+#include "cinternetdevice.h"
+#include "cstreamingserver.h"
+#include "caudiocompression.h"
+#include "cmp3audiocompression.h"
+#include "cflacaudiocompression.h"
+#include "calacaudiocompression.h"
+#include "caacaudiocompression.h"
+#include "cmp2audiocompression.h"
+#include "cnoaudiocompression.h"
+#include "coriginalaudiocompression.h"
+#include "cvorbisaudiocompression.h"
+#include "cistreammetadata.h"
+#include "ccoverloader.h"
 
 #include "simple-timer.h"
 #include "radio-server.h"
-extern "C" 
-{
-    #include "wavfile.h"
-}
 
 using namespace Wt;
 using namespace std;
 
-class CRadioServer;     // Forward Declaration
+// Forward Declaration
+class CRadioServer;     
+class CStreamingServer;
+class CAudioCompression;
+class CIStreamMetaData;
+class CCoverLoader;
+#if defined(HAVE_ALSA)
+class CAlsaOutput;
+#endif
 
 class CRadioController 
     :   public WObject,
@@ -54,21 +77,31 @@ class CRadioController
         public ProgrammeHandlerInterface
 {
     public:
-        CRadioController(CRadioServer* radioServer);
+        CRadioController(CRadioServer* radioServer, CStreamingServer* streamingServer);
 
         CDeviceID openDevice();
         void setChannel(string Channel, bool isScan);
         void startScan();
         void stopScan();
         void stop();
+        void webStop();
         void play(string channel, string title, uint32_t service);
-        int currentSampleRate() { return audioSampleRate; }
+        void play(string channel, string url);
+        unsigned int currentSampleRate() { return audioSampleRate; }
+        int currentWebSampleRate();
 
         RingBuffer<int16_t>& getAudioRingBuffer() { return _audioBuffer; }
+        RingBuffer<uint8_t>& getCompressedAudioRingBuffer() { return _compressedAudioBuffer; }
+        //RingBuffer<uint8_t>& getMP3AudioRingBuffer(); 
+        CAudioCompression* getExportEncoderContext() { return _Export.get(); }
 
         // slots called From the Backend
         virtual void onFrameErrors(int frameErrors) override;
         virtual void onNewAudio(std::vector<int16_t>&& audioData, int sampleRate, const std::string& mode) override;
+        virtual void onMetaData(string metadata) override;
+        virtual void onArtistAndTitle(string title) override;
+        virtual void onNoCoverFound() override;
+        virtual void onNewCompressedAudio(uint8_t* compressedData, int length, bool dabplussource) override;
         virtual void onRsErrors(bool uncorrectedErrors, int numCorrectedErrors) override;
         virtual void onAacErrors(int aacErrors) override;
         virtual void onNewDynamicLabel(const std::string& label) override;
@@ -103,7 +136,20 @@ class CRadioController
         bool recordFlag() { return _recordFlag; }
         bool playFlag() { return _playFlag; }
         void setRecordFromChannel(string channelName) { _recordFromChannel = channelName; }
-        void setRecordToDir(string dir) { _recordToDir = dir; }
+        void setRecordToDir(string dir);
+
+        // Audio Output
+    #if defined(HAVE_ALSA)
+        void postFoundedSoundCards();
+    #endif
+        string getCurrentAudioDevice() { return _currentAudioDevice; }
+        void setCurrentAudioDevice(string audioDevice) { _currentAudioDevice = audioDevice; }
+
+        void setExportFlag(bool flag);
+
+        CRadioServer* getRadioServer() { return _radioServer; }
+
+        void setChannelSwitch(bool s) { _channelSwitch = s; }
 
     private:
         void resetTechnicalData();
@@ -111,7 +157,12 @@ class CRadioController
         void closeDevice();
         void setService(uint32_t service, bool force = false);
 
-        CRadioServer* _radioServer;
+        void reencodeandExportAudioForStreaming(int16_t* data, int len, int sampleRate);
+        void saveAudioStreamAsFile(int16_t* data, int len, int sampleRate);
+        void sendPCMToSpeakers(std::vector<int16_t>&& audioData, int sampleRate, const std::string& mode, bool reinitalsa);
+
+        CRadioServer *_radioServer;
+        CStreamingServer *_streamingServer; 
 
         // Signal accessors
         Signal<bool>& switchToNextChannel() { return nextChannel_; }
@@ -127,6 +178,7 @@ class CRadioController
         unique_ptr<RadioReceiver> radioReceiver;
         RadioReceiverOptions rro;
         string currentChannel;
+        bool _channelSwitch;            // Workaraound! Prevent sending wrong SampleRates to ALSA
         uint16_t current_EId;
         int32_t currentFrequency;
         uint32_t currentService;
@@ -155,10 +207,19 @@ class CRadioController
         string currentEnsembleLabel;
         int bitRate;
         CDeviceID deviceId = CDeviceID::UNKNOWN;
+        string _currentAudioDevice = "default";
+        string _lastAudioDevice = "default";
 
+        // Audio-Alsaplayback
+#if defined(HAVE_ALSA)
+        unique_ptr<CAlsaOutput> _alsaOutput;
+        list<string> _soundDevices;
+#endif
         // Streaming
         RingBuffer<int16_t> _audioBuffer;
-        int audioSampleRate = 0;
+        RingBuffer<uint8_t> _compressedAudioBuffer;
+        unsigned int audioSampleRate = 0;
+        bool _compressBeforeExport = false;
         
         // Timer
         CSimpleTimer channelTimer;
@@ -169,13 +230,25 @@ class CRadioController
         thread scanHandle;
 
         // Recording
-        string getFilenameForRecord();
+        string getFilenameForRecord(string ending);
 
         bool _recordFlag = false;
         bool _playFlag = false;
         string _recordFromChannel;
         string _recordToDir;
-        FILE *_fd = nullptr;
+        
+        FILE *_uncompressed_fd = nullptr;
+
+        // Export (for instance to CloudStream)
+        //unique_ptr<CAudioCompression> _exportAudio = nullptr;
+        unique_ptr<CAudioCompression> _Export = nullptr;
+        unique_ptr<CAudioCompression> _AudioRecorder = nullptr; 
+        unique_ptr<CIStreamMetaData> _StreamMetaDataAnalyser = nullptr;
+
+        bool _exportFlag = false;
+
+        // Coverloader
+        unique_ptr<CCoverLoader> _CoverLoader;
 
         friend class CRadioServer;
 };

@@ -21,19 +21,42 @@
 
 #define AUDIOBUFFERSIZE 32768
 
-CRadioController::CRadioController(CRadioServer* radioServer)
+CRadioController::CRadioController(CRadioServer* radioServer, CStreamingServer* streamingServer)
     :   WObject(),
-        _audioBuffer(2 * AUDIOBUFFERSIZE)
+        //_audioBuffer(2 * AUDIOBUFFERSIZE)
+        _audioBuffer(32 * AUDIOBUFFERSIZE),
+        _compressedAudioBuffer(32 * AUDIOBUFFERSIZE)
 {
     _radioServer = radioServer;
+    _streamingServer = streamingServer;
 
-    cout << "Initialising ..." << endl;
+    _radioServer->log("info", "Initialising CRadioController.");
     resetTechnicalData();
 
     rro.decodeTII = true;
+    isChannelScan = false;  // Bugfix 26.01.2022
     //rro.disableCoarseCorrector=false;
+    _compressBeforeExport = false;
+
+#if defined(HAVE_ALSA)
+    // First for Devices, later reconfigure
+    _alsaOutput = make_unique<CAlsaOutput>(2, 48000, _currentAudioDevice, this);
+    
+    _alsaOutput->getSounddeviceList(&_soundDevices);
+#endif    
+
+#if defined(HAVE_FFMPEG)
+    //_exportAudio = make_unique<CMP3AudioCompression>(this);
+    _exportFlag = false;
+    //_StreamMetaDataAnalyser = make_unique<CIStreamMetaData>(this);
+#endif
 
     this->switchToNextChannel().connect(this, &CRadioController::nextChannel);
+    _recordToDir = "";
+
+    _CoverLoader = make_unique<CCoverLoader>(this);
+
+    _channelSwitch = false;
 }
 
 void CRadioController::resetTechnicalData() 
@@ -64,7 +87,7 @@ void CRadioController::resetTechnicalData()
 
 void CRadioController::deviceRestart()
 {
-    cout << "CRadioController: deviceRestart" << endl;
+    _radioServer->log("info", "[CRadioController] deviceRestart");
     bool isPlay = false;
 
     if (device)
@@ -74,11 +97,10 @@ void CRadioController::deviceRestart()
 
     if (!isPlay)
     {
-        cout << "RadioController: " << "Radio device is not ready or does not exists." << endl;
+        _radioServer->log("info", "[CRadioController] Radio device is not ready or does not exists.");
+        
         return;
     }
-
-    cout << "Start LabelTimer" << endl;
 
     labelTimer.setInterval([&](){
         labelTimerTimeout();
@@ -93,23 +115,20 @@ CDeviceID CRadioController::openDevice()
 
     if (deviceId == CDeviceID::UNKNOWN) 
     {
-        /* device.reset(CInputFactory::GetDevice(*this, "rtl_tcp"));
-        // First: We use RTL_TCP only
-        CRTL_TCP_Client* RTL_TCP_Client = static_cast<CRTL_TCP_Client*>(device.get());
-        RTL_TCP_Client->setServerAddress("192.168.0.189");
-        RTL_TCP_Client->setPort(1234);
-        RTL_TCP_Client->restart();*/
-        device.reset(CInputFactory::GetDevice(*this, "rtl_sdr"));
-
-        cout << "Sollte jetzt laufen" << endl;
-
-        //deviceId = device->getID();
+        if (_radioServer->getSavedDevice() == "rtl-tcp")
+        {
+            device.reset(CInputFactory::GetDevice(*this, "rtl_tcp"));
+            CRTL_TCP_Client* RTL_TCP_Client = static_cast<CRTL_TCP_Client*>(device.get());
+            RTL_TCP_Client->setServerAddress(_radioServer->getSavedIPAddress());
+            RTL_TCP_Client->setPort(stoi(_radioServer->getSavedPort()));
+            RTL_TCP_Client->restart();
+        }
+        else
+        {
+            device.reset(CInputFactory::GetDevice(*this, "rtl_sdr"));
+        }
     }
 
-    /* if (_wavResource == nullptr)
-    {
-        _wavResource = make_shared<CWavStreamerResource>(_audioBuffer);
-    } */
     return device->getID();
 }
 
@@ -129,24 +148,29 @@ void CRadioController::setChannel(string Channel, bool isScan)
     if (currentChannel != Channel) 
     {
         currentChannel = Channel;
+        _channelSwitch = true;
         current_EId = 0;
         currentEnsambleLabel = "";
         currentFrequency = channels.getFrequency(Channel);
 
         if (currentFrequency != 0 && device) 
         {
-            cout << "CRadioController: Tune to channel " << Channel << " " << currentFrequency/1e6 << " Mhz" << endl;
+            _radioServer->log("info", "[CRadioController] Tune to channel " + Channel);
+            //cout << "CRadioController:  " << Channel << " " << currentFrequency/1e6 << " Mhz" << endl;
             device->setFrequency(currentFrequency);
-            cout << "CRadioController: Reset Device Buffer" << endl;
+            _radioServer->log("info", "[CRadioController] Reset Device Buffer.");
             device->reset();    // clear Buffer
         }
 
         if (device) 
         {
-            cout << "CRadioController: New RadioReceiver" << endl;
+            _radioServer->log("info", "[CRadioController] New RadioReceiver.");
+            
             radioReceiver = make_unique<RadioReceiver>(*this, *device, rro, 1);
             radioReceiver->setReceiverOptions(rro);
-            cout << "CRadioController: restart(isScan) RadioReceiver" << endl;
+            
+            _radioServer->log("info", "[CRadioController] restart(isScan) RadioReceiver");
+            
             radioReceiver->restart(isScan);
         }
     }
@@ -154,8 +178,8 @@ void CRadioController::setChannel(string Channel, bool isScan)
 
 void CRadioController::startScan() 
 {
-    cout << "CRadioController: " << "Start channel scan" << endl;
-
+    _radioServer->log("info", "[CRadioController] Start channel scan.");
+    
     deviceRestart();
 
     // Start with the lowest Frequency
@@ -181,49 +205,242 @@ void CRadioController::onFrameErrors(int frameErrors)
     //cout << "CRadioController::onFrameErrors: Not implmented yet" << endl;
 }
 
-void CRadioController::onNewAudio(std::vector<int16_t>&& audioData, int sampleRate, const std::string& mode) 
+void CRadioController::onNewCompressedAudio(uint8_t* compressedData, int length, bool dabplussource)
 {
-    //cout << "CRadioController::onNewAudio: new Audio " << endl;
-    _audioBuffer.putDataIntoBuffer(audioData.data(), static_cast<int32_t>(audioData.size()));
-
-    if (audioSampleRate != sampleRate) 
+    if (!dabplussource)
     {
-        audioSampleRate = sampleRate;
+        // this was only an idea, i did not know, that the most radio stations are using
+        // icycast as a service for sending metadata.
+
+        //_StreamMetaDataAnalyser->start_analysing(); // => if the use is wanted, then ffmpeg is needed!
+        //_StreamMetaDataAnalyser->copyToAnalyseBuffer(compressedData, length);
+        if (to_bool(_radioServer->_settings()->_doNotReEncodeIChannels))
+        {
+            if (_recordFlag)
+            {
+                if (!_AudioRecorder)
+                {
+                    string path = "";
+                    string filename = "";
+                    if (_recordToDir.length() > 0)
+                    {
+                        string codec = _radioServer->getInternetChannelCodec();
+                        filename = getFilenameForRecord(codec);
+                        path = _recordToDir + "/" + filename;
+                    }
+
+                    if (filename.find("[ERROR]") == string::npos)
+                    {
+                        _AudioRecorder = make_unique<COriginalAudioCompression>(this, path);
+                        _AudioRecorder->setSampleRate(audioSampleRate);
+                        _AudioRecorder->start_compression(false);
+                        _AudioRecorder->directFeed((int16_t*)compressedData, length);
+
+                        // save time
+                        _radioServer->saveRecordStartTime();
+                        _radioServer->saveFilename(filename);
+                    }
+                    else
+                    {
+                        // Failure occurs
+                        _recordFlag = false;
+                        _radioServer->errorOccur(filename);
+                    }
+                }
+                else
+                {
+                    _AudioRecorder->directFeed((int16_t*)compressedData, length);
+                }
+            }
+            else
+            {
+                if (_AudioRecorder)
+                {
+                    _AudioRecorder->stop_compression();
+                    _AudioRecorder = nullptr;
+                }
+            }
+        }
     }
 
-    // record the stream
-    if (_recordFlag)
+    if (_exportFlag)
     {
-        if (not _fd)
+        if (!dabplussource)
         {
-            //cout << "RadioController: (getFilenameForRecord): " << getFilenameForRecord() << endl;
-            string path = _recordToDir + "/" + getFilenameForRecord();
-            _fd = wavfile_open(path.c_str(), audioSampleRate, 2);
-
-            if (not _fd)
-            {
-                cerr << "Could not write to file " << getFilenameForRecord().c_str() << endl;
-            }
+            _compressedAudioBuffer.putDataIntoBuffer(compressedData, length);
+            _compressBeforeExport = false;
         }
         else
         {
-            //cout << "Write to WAV File ..." << endl;
-            wavfile_write(_fd, audioData.data(), audioData.size());
-        }
-    }
-    else
-    {
-        if (_fd)
-        {
-            wavfile_close(_fd);
-            _fd = nullptr;
+            _radioServer->log("info", "[CRadioController] DAB+ has to be reencoded for export ...");
+            
+            _compressBeforeExport = true;
+            _exportFlag = false;    // Ignore further future calls till user change back to an internetchannel.
         }
     }
 }
 
+void CRadioController::reencodeandExportAudioForStreaming(int16_t* data, int len, int sampleRate)
+{
+#if defined(HAVE_FFMPEG)
+    if (_compressBeforeExport)
+    {
+        if (!_Export)
+        {
+            _Export = make_unique<CFLACAudioCompression>(this);   // BEST QUALITY
+            _Export->setSampleRate(audioSampleRate);
+            _Export->start_compression(false);
+            _Export->directFeed(data, len);
+        }
+        else
+        {
+            _Export->directFeed(data, len);
+        }
+    }
+    else
+    {
+        if (_Export)
+        {
+            _Export->stop_compression();
+            _Export = nullptr;
+        }
+    }
+#endif
+}
+
+void CRadioController::saveAudioStreamAsFile(int16_t* data, int len, int sampleRate)
+{
+    if (_radioServer->isInternetChannelPlaying() && 
+        to_bool(_radioServer->_settings()->_doNotReEncodeIChannels))
+    {
+        return; // Nothing here to do for us
+    }
+
+    if (_recordFlag)
+    {
+        if (!_AudioRecorder)
+        {
+            string path = "";
+            string filename = "";
+            if (_recordToDir.length() > 0)
+            {
+                filename = getFilenameForRecord(_radioServer->getEndingForRecordingFile());
+                path = _recordToDir + "/" + filename;
+            }
+
+            if (filename.find("[ERROR]") == string::npos)
+            {
+#if defined(HAVE_FFMPEG)
+                switch (_radioServer->getRecordFormat())
+                {
+                    case AudioCompression::AAC:
+                        _AudioRecorder = make_unique<CAACAudioCompression>(this, path);
+                    break;
+                    case AudioCompression::ALAC:
+                        _AudioRecorder = make_unique<CALACAudioCompression>(this, path);
+                    break;
+                    case AudioCompression::MP2:
+                        _AudioRecorder = make_unique<CMP2AudioCompression>(this, path);
+                    break;
+                    case AudioCompression::MP3:
+                        _AudioRecorder = make_unique<CMP3AudioCompression>(this, path);
+                    break;
+                    case AudioCompression::FLAC:
+                        _AudioRecorder = make_unique<CFLACAudioCompression>(this, path);
+                    break;
+                    case AudioCompression::VORBIS:
+                        _AudioRecorder = make_unique<CVORBISAudioCompression>(this, path);
+                    break;
+                    case AudioCompression::WAV:
+                    default:
+                        _AudioRecorder = make_unique<CNoAudioCompression>(this, path);
+                    break;
+                }
+#else
+                _AudioRecorder = make_unique<CNoAudioCompression>(this, path);
+#endif
+                _AudioRecorder->setSampleRate(audioSampleRate);
+                _AudioRecorder->start_compression(false);
+                _AudioRecorder->directFeed(data, len);
+
+                // save time
+                _radioServer->saveRecordStartTime();
+                _radioServer->saveFilename(filename);
+            }
+            else
+            {
+                // Failure occurs
+                _recordFlag = false;
+                _radioServer->errorOccur(filename);
+            }
+        }
+        else
+        {
+            _AudioRecorder->directFeed(data, len);
+        }
+    }
+    else
+    {
+        if (_AudioRecorder)
+        {
+            _AudioRecorder->stop_compression();
+            _AudioRecorder = nullptr;
+        }
+    }
+}
+
+void CRadioController::sendPCMToSpeakers(std::vector<int16_t>&& audioData, int sampleRate, const std::string& mode, bool reinitalsa)
+{
+#if defined(HAVE_ALSA)
+    if (reinitalsa)
+    {
+        _alsaOutput->closeDevice();
+        _alsaOutput = make_unique<CAlsaOutput>(2, audioSampleRate, _currentAudioDevice, this);
+    }
+    
+    _alsaOutput->playPCM(move(audioData));
+#endif
+}
+
+void CRadioController::onNewAudio(std::vector<int16_t>&& audioData, int sampleRate, const std::string& mode) 
+{
+    //cout << "CRadioController::onNewAudio: new Audio " << audioData.size() << endl;
+    bool newAudioOutput = false;
+
+    _audioBuffer.putDataIntoBuffer(audioData.data(), static_cast<int32_t>(audioData.size()));
+
+    if (audioSampleRate != sampleRate && _channelSwitch) 
+    {
+        audioSampleRate = sampleRate;
+        newAudioOutput = true;
+        _channelSwitch = false;
+    }
+
+    // if wanted, stream this over a socket
+    this->reencodeandExportAudioForStreaming(audioData.data(), static_cast<int32_t>(audioData.size()), sampleRate);
+
+    // if channel was change we have to inform the server
+    if (_radioServer->channelChange())
+    {
+        // inform the server
+        _radioServer->audioDataIsAvailable();
+    }
+
+    // record the stream into a file
+    this->saveAudioStreamAsFile(audioData.data(), static_cast<int32_t>(audioData.size()), sampleRate);
+
+    // if possible, output to real speakers
+    this->sendPCMToSpeakers(move(audioData), sampleRate, mode, newAudioOutput);
+}
+
+void CRadioController::setRecordToDir(string dir) 
+{ 
+    _recordToDir = dir; 
+}
+
 // looks for files with similar names and find the highest number. if file exists automaticly adds 
 // a higher number
-string CRadioController::getFilenameForRecord()
+string CRadioController::getFilenameForRecord(string ending)
 {
     string filename = "";
 
@@ -232,78 +449,149 @@ string CRadioController::getFilenameForRecord()
     DIR *directory;
     struct dirent *file;
     directory = opendir(_recordToDir.c_str());
-    while (file = readdir(directory)) 
+    if (directory != NULL)
     {
-        string filename_temp(file->d_name);
-        if (filename_temp.find(_recordFromChannel) == 0)
+        while (file = readdir(directory)) 
         {
-            // get the number
-            size_t pos = filename_temp.find("_");
+            string filename_temp(file->d_name);
+            if (filename_temp.find(_recordFromChannel) == 0)
+            {
+                // get the number
+                size_t pos = filename_temp.find("_");
 
-            if (pos != string::npos)
-            {
-                string n = filename_temp.substr(pos + 1, filename_temp.find(".") - pos - 1);
-                int nr = atoi(n.c_str());
-                if (nr > max_number)
+                if (pos != string::npos)
                 {
-                    max_number = nr;
+                    string n = filename_temp.substr(pos + 1, filename_temp.find(".") - pos - 1);
+                    int nr = atoi(n.c_str());
+                    if (nr > max_number)
+                    {
+                        max_number = nr;
+                    }
                 }
-            }
-            else
-            {
-                if (max_number == -1)
+                else
                 {
-                    max_number = 1;
+                    if (max_number == -1)
+                    {
+                        max_number = 1;
+                    }
                 }
             }
         }
-    }
 
-    if (max_number == -1)
-    {
-        filename = _recordFromChannel + ".wav";
+        if (max_number == -1)
+        {
+            filename = _recordFromChannel + "." + ending;
+        }
+        else
+        {  
+            stringstream ss;
+            max_number++;
+            ss << max_number;
+
+            filename = _recordFromChannel + "_" + ss.str() + "." + ending;
+        }
+        
+        return filename;
     }
     else
-    {  
-        stringstream ss;
-        max_number++;
-        ss << max_number;
+    {
+        string ret_string = "";
+        switch(errno)
+        {
+            case EACCES: ret_string = "[ERROR] Search permission is denied for the component of the path prefix of " + _recordToDir + " or read permission is denied for " + _recordToDir + ".";
+            break;
+            case ELOOP: ret_string = "[ERROR] A loop exists in symbolic links encountered during resolution of the " + _recordToDir + " argument.";
+            break;
+            case ENAMETOOLONG: ret_string = "[ERROR] The length of the dirname argument exceeds {PATH_MAX} or a pathname component is longer than {NAME_MAX}.";
+            break;
+            case ENOENT: ret_string = "[ERROR] A component of dirname does not name an existing directory or " + _recordToDir + " is an empty string.";
+            break;
+            case ENOTDIR: ret_string = "[ERROR] A component of dirname is not a directory.";
+            break;
+            default:
+            ret_string = "[ERROR] An error occur, please check your filepath.";
+        }
 
-        filename = _recordFromChannel + "_" + ss.str() + ".wav";
+        return ret_string;
     }
-    
-    return filename;
 }
 
 void CRadioController::onRsErrors(bool uncorrectedErrors, int numCorrectedErrors) 
 {
-    cout << "CRadioController::onRsErrors: Not implmented yet" << endl;
+    _radioServer->log("info", "[CRadioController] onRsErrors: Not implmented yet ...");
 }
 
 void CRadioController::onAacErrors(int aacErrors) 
 {
-    cout << "CRadioController::onAacErrors: Not implmented yet" << endl;
+    _radioServer->log("info", "[CRadioController] onAacErrors: Not implmented yet ...");
 }
 
 void CRadioController::onNewDynamicLabel(const std::string& label)
 {
-    cout << "CRadioController::onNewDynamicLabel: Not implmented yet" << endl;
+    if (_radioServer->getRetrieveMetadata())
+    {
+        string Artist = _CoverLoader->getArtist(label);
+        string Title = _CoverLoader->getTitle(label);
+
+        _radioServer->updateNewTitle("Artist/Group: " + Artist + " Title: " + Title);
+    }
 }
     
+void CRadioController::onArtistAndTitle(string title)
+{
+    if (_radioServer->getRetrieveMetadata())
+    {
+        // Called from CCoverLoader
+        _radioServer->updateNewTitle(title);
+    }
+}
+
+void CRadioController::onNoCoverFound()
+{
+    if (_radioServer->getRetrieveMetadata())
+    {
+        string url = _radioServer->getRadioStationFavIcon();
+
+        if (url.length() > 0)
+        {
+            _CoverLoader->loadFavIcon(url);
+        }
+    }
+}
+
+void CRadioController::onMetaData(string metadata)
+{
+    if (_radioServer->getRetrieveMetadata())
+    {
+        _radioServer->saveRecordStartTime(); // actualize the RecordTime
+
+        if (metadata.compare("StreamTitle='';") != 0)
+        {
+            _CoverLoader->searchCoverFor(metadata);
+        }
+    }
+}
+
 void CRadioController::onMOT(const mot_file_t& mot_file)
 {
-    //cout << "CRadioController::onMOT: Not implmented yet" << endl;
-    _radioServer->updateMOT( mot_file );
+    if (_radioServer->getRetrieveMetadata())
+    {
+        _radioServer->updateMOT( mot_file );
+        
+        if (_recordFlag)
+        {
+            _radioServer->saveMot( mot_file );
+        }
+    }
 }
 
 void CRadioController::onPADLengthError(size_t announced_xpad_len, size_t xpad_len)
 {
-    cout << "CRadioController::onPADLengthError: Not implmented yet" << endl;
+    _radioServer->log("info", "[CRadioController] onPADLengthError: Not implmented yet ...");
 }
 
 void CRadioController::onSNR(int snr)
 {
-    //cout << "CRadioController::onSNR: " << snr << endl;
     _radioServer->updateSNR(this->snr);
     if (this->snr == snr)
     {
@@ -311,8 +599,7 @@ void CRadioController::onSNR(int snr)
     }
     this->snr = snr;
     
-    cout << "CRadioController::onSNR: " << this->snr << endl;
-    // emit
+    //cout << "CRadioController::onSNR: " << this->snr << endl;
 }
 
 void CRadioController::onFrequencyCorrectorChange(int fine, int coarse) 
@@ -337,12 +624,10 @@ void CRadioController::onFrequencyCorrectorChange(int fine, int coarse)
 
 void CRadioController::onSyncChange(char isSync)
 {
-    //cout << "CRadioController::onSyncChange: Not implmented yet" << endl;
     bool sync = (isSync == SYNCED) ? true : false;
 
     if (this->isSync == sync)
     {
-        //cout << "sync == isSync" << endl;
         return;
     }
 
@@ -351,7 +636,6 @@ void CRadioController::onSyncChange(char isSync)
 
 void CRadioController::onSignalPresence(bool isSignal)
 {
-    cout << "CRadioController::onSignalPresence: " << isSignal << endl;   
     if (this->isSignal != isSignal)
     {
         this->isSignal = true;
@@ -359,8 +643,6 @@ void CRadioController::onSignalPresence(bool isSignal)
 
     if (isChannelScan)
     {
-        cout << "CRadioController: " << "switch to next Channel" << endl; 
-        cout << "CRadioController: isSignal ist " << isSignal << endl;
         nextChannel_.emit(isSignal);
     }
 }
@@ -372,7 +654,10 @@ void CRadioController::onServiceDetected(uint32_t sId)
     {
         stationCount++;
         currentText = "Found channels: " + to_string(stationCount);
-        cout << currentText << " mit der sId " << std::hex << sId << std::dec << " auf " << currentChannel << endl;
+        
+        _radioServer->log("info", "[CRadioController] " + currentText + " auf " + currentChannel + ".");
+        
+        //cout << currentText << " mit der sId " << std::hex << sId << std::dec << " auf " << currentChannel << endl;
         // emit Textchanged für Wt
         _radioServer->updateSearchingChannel(currentChannel, to_string(stationCount));
     }
@@ -388,7 +673,7 @@ void CRadioController::onNewEnsemble(uint16_t eId)
 {
     //cout << "CRadioController::onNewEnsemble: Not implmented yet" << endl;
     //[ToDo] emitten, dass was neues gefunden wurde
-    cout << "CRadioController: ID of ensemble: " << eId << endl;
+    _radioServer->log("info", "[CRadioController] ID of ensemble: " + to_string(eId));
 
     if (current_EId == eId)
     {
@@ -465,34 +750,32 @@ void CRadioController::onNewNullSymbol(std::vector<DSPCOMPLEX>&& data)
 
 void CRadioController::onTIIMeasurement(tii_measurement_t&& m)
 {
-    cout << "CRadioController::onTIIMeasurement: "
-         << "TII comb " << m.comb 
-         << " pattern " << m.pattern
-         << " delay " << m.delay_samples
-         << " = " << m.getDelayKm()
-         << " with errors " << m.error << endl;
+    _radioServer->log("debug", "[CRadioController] onTIIMeasurement: TII comb " + 
+        to_string(m.comb) + " pattern " + to_string(m.pattern) +
+        " delay " + to_string(m.delay_samples) + 
+        " = " + to_string(m.getDelayKm()) + " with errors " + to_string(m.error));
 }
 
 void CRadioController::onMessage(message_level_t level, const std::string& text, const std::string& text2) 
 {
-    cout << "CRadioController::onMessage: Not implmented yet" << endl;        
+    // Error Messages!! [ToDo: implement them!!!]
+    _radioServer->log("debug", "[CRadioController] onMessage: " + text + " / " + text2);
 }
 
 void CRadioController::onInputFailure() 
 {
-    //cout << "CRadioController::InputFailure: Not implmented yet" << endl;        
-    //stop();
+    _radioServer->log("debug", "[CRadioController] InputFailure: Not implmented yet ... ");
 }
 
 // Private Slots
 void CRadioController::nextChannel(bool isWait) 
 {
-    cout << "Weiter gehts ... wait ist " << isWait << endl;
+    //cout << "Weiter gehts ... wait ist " << isWait << endl;
     if (isWait) // It might be a Channel, wait 10s
     {
         channelTimer.setInterval([&]() {
             channelTimerTimeout();
-        }, 60000);
+        }, 30000);
     }
     else
     {
@@ -519,7 +802,7 @@ void CRadioController::nextChannel(bool isWait)
 
 void CRadioController::channelTimerTimeout() 
 {
-    cout << "ChannelTimer::TimeOut" << endl;
+    _radioServer->log("debug", "[CRadioController] ChannelTimer -> TimeOut");
     channelTimer.stopTimer();
 
     if (isChannelScan) 
@@ -551,7 +834,8 @@ void CRadioController::labelTimerTimeout()
         if (not label.empty())
         {
             // emit StationNameReceived
-            cout << "Found service " << hex << service.serviceId << dec << " Name: " << label << " auf " << currentChannel << endl;
+            _radioServer->log("debug", "Found service " + to_string(service.serviceId) + " Name: " + label + " auf " + currentChannel);
+            //cout << "Found service " << hex << service.serviceId << dec << " Name: " << label << " auf " << currentChannel << endl;
 
             //nextService_.emit(service.serviceId, label, currentChannel);
             if (isChannelScan)
@@ -574,8 +858,8 @@ void CRadioController::labelTimerTimeout()
 
 void CRadioController::stopScan() 
 {
-    cout << "CRadioController: " << " Stop Channel scan";
-
+    _radioServer->log("debug", "[CRadioController] Stop channel scan.");
+    
     currentTitle = "No Station";
     currentText = "";
     currentChannel = "";
@@ -604,6 +888,42 @@ void CRadioController::stop()
     {
         _radioServer->scanStop();
     }
+
+#if defined(HAVE_ALSA)
+    // Add in vacation time in Switzerland ;-) ... this stopps the Thread in ALSA Output class
+    _radioServer->log("info", "[CRadioController] Stopping sound ...");
+    
+    if (_alsaOutput->isRunning())
+        _alsaOutput->stop();
+#endif
+}
+
+void CRadioController::webStop()
+{
+    _playFlag = false;          // Bugfix 26.01.2022
+
+    // First of all -> stop the recording directly
+    if (_recordFlag)
+    {
+        _recordFlag = false;
+        if (_AudioRecorder)
+        {
+            _AudioRecorder->stop_compression();
+            _AudioRecorder = nullptr;
+        }
+    }
+
+    _streamingServer->stop();
+
+    //_StreamMetaDataAnalyser->stop_analysing();
+
+#if defined(HAVE_ALSA)
+    // Add in vacation time in Switzerland ;-) ... this stopps the Thread in ALSA Output class
+    // untested. In Switzerland my iPhone did not work properly as a Tethering Device
+    cerr << "Stopping sound ..." << endl;
+    if (_alsaOutput->isRunning())
+        _alsaOutput->stop();
+#endif
 }
 
 /*****************************************************************************************
@@ -629,6 +949,32 @@ void CRadioController::play(string channel, string title, uint32_t service)
     deviceRestart();
     setChannel(channel, false);
     setService(service);
+}
+
+int CRadioController::currentWebSampleRate()
+{
+    return _streamingServer->getAudioSamplerate();
+}
+
+void CRadioController::play(string channel, string url)
+{
+    _radioServer->log("info", "[CRadioController] Playing channel " + channel + " with url " + url);
+    
+    if (channel == "")
+    {
+        return;
+    }
+
+    _playFlag = true;
+    
+    if (isChannelScan == true) 
+    {
+        _radioServer->log("info", "[CRadioController] Channel Scan is true?, this is redicoulous ...");
+        
+        stopScan();
+    }
+
+    _streamingServer->setInternetChannel(url);
 }
 
 void CRadioController::setService(uint32_t service, bool force)
@@ -676,7 +1022,7 @@ void CRadioController::stationTimerTimeout()
                     bool success = radioReceiver->playSingleProgramme(*this, "", s);
                     if (!success)
                     {
-                        cout << "CRadioController: Selecting Service failed!" << endl;
+                        _radioServer->log("error", "[CRadioController] Selecting Service failed!");
                     }
                     else
                     {
@@ -694,3 +1040,27 @@ void CRadioController::stationTimerTimeout()
         }
     }
 }
+
+/* RingBuffer<uint8_t>& CRadioController::getMP3AudioRingBuffer()
+{ 
+    return _exportAudio->getExportBuffer(); 
+}*/
+
+void CRadioController::setExportFlag(bool flag) 
+{ 
+    _exportFlag = flag;
+    _compressBeforeExport = flag; 
+}
+
+#if defined(HAVE_ALSA)
+void CRadioController::postFoundedSoundCards()
+{
+    if (!_radioServer->isPlaying())
+    {
+        for (string name: _soundDevices)
+        {
+            _radioServer->soundcardFound(name);
+        }
+    }
+}
+#endif

@@ -42,12 +42,14 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WSelectionBox.h>
 #include <Wt/WWebWidget.h>
+#include <Wt/WProgressBar.h>
 
 #include "wradio-controller.h"
 #include "station-item.h"
 #include "wwav-streamer-resource.h"
 #include "radio-server.h"
 #include "csettingsformview.h"
+#include "cbouqueteditorview.h"
 #include "crecords.h"
 
 using namespace Wt;
@@ -55,7 +57,10 @@ using namespace std;
 
 class RadioEvent;
 class SettingsEvent;
+class BouquetEvent;
+class RecordFileEvent;
 class CSettingsFormView;
+class CBouquetEditorView;
 class CRecords;
 
 class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
@@ -66,31 +71,45 @@ class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
 
         void radioEvent(const RadioEvent& event);
         void settingsEvent(const SettingsEvent& event);
+        void bouquetEvent(const BouquetEditorEvent& event);
+        void recordEvent(const RecordFileEvent& event);
+        void errorEvent(const ErrorEvent& event);
         CRadioServer& getRadioServer() { return _radioServer; }
         void cancelSettings() { _mainStack->setCurrentIndex(0); }
         string recordPath() { return _recordPath; }
 
     private:
         void scan_dab();
+        void scan_internet();
         void record();
         void initialiseRadioChannels();
         void handlePathChange();
         void connect();
         void removeChannelScanItem();
+        void removeWebChannelScanItem();
 
         string _recordPath;         // For DownloadPage
 
         CRadioServer &_radioServer;
 
         WMenu *mChannelMenu;
+        WMenu *mWebChannelMenu;
+        WMenu *mBouquetChannelMenu;
+        WText *_favoriteText;
         unique_ptr<WContainerWidget> mMainWidget;
-        WContainerWidget *_ChannelContainer;
+        WContainerWidget *_DABChannelContainer;
+        WContainerWidget *_InternetChannelContainer;
+        WContainerWidget *_BouquetChannelContainer;
         WContainerWidget *_motrow;
+        WContainerWidget *_serviceInfoContainer;
+        int _progressBarIndex = 0;
         shared_ptr<CWavStreamerResource> mAudioResource;
         WStackedWidget *_mediaPlayerContainer;
         WStackedWidget *_mainStack;
+        WStackedWidget *_channelContainer;
         WText *_ServiceInfo;
         WText *_ServiceInfoSmall;
+        WContainerWidget *_serviceInfoSmallContainer;
         WImage *_AntennaImg;
         WText *_infoTextDirect;
         WMediaPlayer *mAudio;
@@ -100,11 +119,17 @@ class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
         WContainerWidget *_firstRow;
         WContainerWidget *_betweenIMG;
         bool _removeChannelScanItem;
+        bool _removeWebChannelScanItem;
         CSettingsFormView *_settings;
         CRecords *_records;
+        CBouquetEditorView *_bouqueteditor;
         WPushButton *recordButton; 
-        
-        //unique_ptr<WMenuItem> _channelScanItem;
+        WPushButton *_WebAndDABSwitchButton;
+        bool _dabMode;
+        bool _bouquetMode;
+        WSelectionBox *_audioDevice;
+        CStationItem *_lastSelectedRadioStation;
+        int _internetCountedCountries;
 
         // Slots
         void playAudio();
@@ -114,6 +139,9 @@ class WaveriderGUI : public WContainerWidget, public CRadioServer::Client
         // GUI Slots
         void actualizeChannelList();
         void setChannel(WMenuItem* item);
+        void setWebChannel(WMenuItem* item);
+        void loadBouquetChannels(WMenuItem* item);
+        void loadBouquets();
         
         struct RADIO_STATION {
             uint32_t serviceId;

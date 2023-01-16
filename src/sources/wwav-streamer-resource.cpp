@@ -67,7 +67,7 @@ void CWavStreamerResource::handleRequest(const Http::Request &request, Http::Res
 
     activityCounter = 100;
 
-    cout << "Ich glaub es geht schon wieder los ... " << endl;
+    //cout << "Ich glaub es geht schon wieder los ... " << endl;
 
     // prepare Controller
     if (!start_com)
@@ -122,12 +122,12 @@ void CWavStreamerResource::handleRequest(const Http::Request &request, Http::Res
 
         response.out().write(h, sizeof(h));
 
-        cout << "HEADER " << endl;
+        //cout << "HEADER " << endl;
 
         if (_audioCounter > 0) 
         {
             _audioCounter--;
-            cout << "Audio Counter: " << _audioCounter << endl;
+            //cout << "Audio Counter: " << _audioCounter << endl;
         }
         else
         {
@@ -160,12 +160,12 @@ void CWavStreamerResource::handleRequest(const Http::Request &request, Http::Res
     if (isAudioReady())
     {
         _activity = true;
-        cout << "audio ready ..." << endl;
+        //cout << "audio ready ..." << endl;
         response.createContinuation();
         response.continuation();
     }
-    else
-        cout << "audio not ready" << endl;
+    //else
+        //cout << "audio not ready" << endl;
 }
 
 // Helper for char* to base64
@@ -299,7 +299,7 @@ void CWavStreamerResource::updateAudioCopyBuffer()
         
         if (total != 0) 
         {
-            cout << "Wavriderresource play: " << bufferedPackages << " Length." << endl;
+            //cout << "Wavriderresource play: " << bufferedPackages << " Length." << endl;
             memcpy(&audioStream[bufferedPackages], audioCopyBuffer, total * 2);
             bufferedPackages += total*2;
         }
@@ -323,5 +323,5 @@ void CWavStreamerResource::stopStreaming()
 
     _radioController->stop();
 
-    cout << "CWavStreamerResource: stopped" << endl;
+    //cout << "CWavStreamerResource: stopped" << endl;
 }

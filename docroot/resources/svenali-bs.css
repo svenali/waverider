@@ -57,7 +57,9 @@ and (orientation: portrait) {
 .west-widget {
     background-color: #eaeaea;
     border-radius: 4px;
-    overflow: auto;
+    overflow: auto !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
     /* height: 800px; */
     /* width: 200px; */
 }
@@ -92,6 +94,14 @@ and (orientation: portrait) {
     color: #b73333;
 }
 
+.serviceStation-web {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-style: italic; 
+    transform: translate(-4px, -8px);
+    color: #b73333;
+}
+
 .info-service-widget {
     border: #337ab7;
     border-style: groove;
@@ -109,6 +119,26 @@ and (orientation: portrait) {
 
 .mot-image {
     margin-bottom: 10px;
+}
+
+.motimg-himself {
+    height: 380px;
+    width: 285; 
+}
+
+.files-widget {
+    border: #337ab7;
+    border-style: groove;
+    border-radius: 4px;
+    margin-left: 10px;
+    margin-top: 10px;
+    /* background-color: #eaeaea; 
+    border-radius: 4px; */
+    overflow: auto !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    /* height: 800px; */
+    /* width: 200px; */
 }
 
 .input-widget {

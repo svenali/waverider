@@ -46,7 +46,7 @@ class CRadioController; // Forward Declaration
 class CJPlayerStreamerResource : public WStreamResource
 {
     public:
-        CJPlayerStreamerResource(shared_ptr<CRadioController> radioController);
+        CJPlayerStreamerResource(CRadioController *radioController);
         
         virtual void handleRequest(const Http::Request &request, Http::Response &response);
 
@@ -56,16 +56,18 @@ class CJPlayerStreamerResource : public WStreamResource
         bool isStreaming() { return _activity; }
 
         void prepareStreaming();
+        void prepareWebStreaming();
         void stopStreaming();
         void sendAudioHeaderAgain();    // If record session is still open...
         
         void setChannel(uint32_t serviceId, string serviceName, string channelID);
+        void setWebChannel(string serviceName, string url);
         uint32_t getPlayingServiceID() { return _radioStation.serviceId; }
         string getPlayingServiceName() { return _radioStation.serviceName; }
         string getPlayingChannelID() { return _radioStation.channelID; }
 
     private:
-        shared_ptr<CRadioController> _radioController;
+        CRadioController *_radioController;
         int audioSampleRate;
 
         void observeRingBuffer();
@@ -84,6 +86,7 @@ class CJPlayerStreamerResource : public WStreamResource
             uint32_t serviceId;
             string serviceName;
             string channelID;
+            string url;
         };
 
         RADIO_STATION _radioStation;

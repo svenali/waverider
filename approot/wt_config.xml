@@ -207,7 +207,7 @@
 	   (e.g. for apache + fastcgi module), or on stderr (e.g. for
 	   the built-in httpd).
          -->
-	<log-file></log-file>
+	<log-file>waverider-server.log</log-file>
 
 	<!-- Logger configuration
 
@@ -240,7 +240,7 @@
 	   Note debugging messages are only emitted when debugging
 	   has been enabled while building Wt.
 	  -->
-	<log-config>* -debug</log-config>
+	<log-config>*</log-config>
 
 	<!-- Maximum HTTP request size (KiB)
 

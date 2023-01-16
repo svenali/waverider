@@ -1,5 +1,5 @@
 /*
- *    Copyright (C) 2021
+ *    Copyright (C) 2022
  *    Dr. Sven Alisch (svenali@gmx.de)
  *
  *    This file is part of the waverider.
@@ -35,6 +35,7 @@
 #include <cstring>
 
 #include <sys/stat.h>
+#include <filesystem>
 
 #include "waverider-gui.h"
 #include "cdeletepushbutton.h"
@@ -52,11 +53,18 @@ class CRecords : public WContainerWidget
 
         void initDownloadPage();
         void deleteFile(WPushButton *b);
+        void showContent(WPushButton *c);
         void updateDownloadPage();
+        void initContentPage(vector<vector<string>> c);
 
     private:
+        int dirExists(const char* const path);
+
         WaveriderGUI &_rider_gui;
         WContainerWidget *_files;
+        WContainerWidget *_filecontent;
+
+        WTable * _ContentTable;
 };
 
 #endif //_CRECORDS_H_

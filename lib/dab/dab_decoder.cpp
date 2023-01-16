@@ -54,7 +54,6 @@ MP2Decoder::MP2Decoder(SubchannelSinkObserver* observer, bool float32) : Subchan
 	scf_crc_len = -1;
 	lsf = false;
 
-
 	int mpg_result;
 
 	// init

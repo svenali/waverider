@@ -37,16 +37,32 @@ struct wavfile_header {
     int data_length;
 };
 
-CJPlayerStreamerResource::CJPlayerStreamerResource(shared_ptr<CRadioController> radioController)
+CJPlayerStreamerResource::CJPlayerStreamerResource(CRadioController *radioController)
 :   WStreamResource(),
     _wait_for_data(true)
 {
     _radioController = radioController;
+
+    _activity = false;
+}
+
+void CJPlayerStreamerResource::prepareWebStreaming()
+{
+    _radioController->getRadioServer()->log("info", "[CJPlayerStreamerResource] Prepare web streaming ...");
+    
+    _activity = true;
+    send_header = true;
+    _audioCounter = 2;
+
+    ringBufferTimer.setInterval([=]{
+        observeRingBuffer();
+    }, 10);
 }
 
 void CJPlayerStreamerResource::prepareStreaming()
 {
-    cout << " =========== PREPARE STREAMING ============" << endl;
+    _radioController->getRadioServer()->log("info", "[CJPlayerStreamerResource] Prepare streaming ...");
+
     _activity = true;
     send_header = true;
     _audioCounter = 20;
@@ -54,22 +70,8 @@ void CJPlayerStreamerResource::prepareStreaming()
     ringBufferTimer.setInterval([=]{
         observeRingBuffer();
     }, 10);
-
-    _radioController->openDevice();
-
-    this_thread::sleep_for(chrono::seconds(3));
-
-    _radioController->play(_radioStation.channelID, _radioStation.serviceName, _radioStation.serviceId);
-
-    this_thread::sleep_for(chrono::seconds(3));
     
     audioSampleRate = _radioController->currentSampleRate();
-
-    while (audioSampleRate == -1) 
-    {
-        this_thread::sleep_for(chrono::seconds(3));
-        audioSampleRate = _radioController->currentSampleRate();
-    }
 }
 
 void CJPlayerStreamerResource::sendAudioHeaderAgain()
@@ -85,6 +87,13 @@ void CJPlayerStreamerResource::setChannel(uint32_t serviceId, string serviceName
     _radioStation.serviceName = serviceName;
 }
 
+void CJPlayerStreamerResource::setWebChannel(string serviceName, string url)
+{
+    _radioStation.serviceName = serviceName;
+    _radioStation.url = url;
+}
+
+/* original für dab+ */
 void CJPlayerStreamerResource::handleRequest(const Http::Request &request, Http::Response &response)
 {
     Http::ResponseContinuation *continuation = request.continuation();
@@ -119,19 +128,7 @@ void CJPlayerStreamerResource::handleRequest(const Http::Request &request, Http:
 
         response.out().write(h, sizeof(h));
 
-        cout << "HEADER " << endl;
-
-        if (_audioCounter > 0) 
-        {
-            _audioCounter--;
-            cout << "Audio Counter: " << _audioCounter << endl;
-        }
-        else
-        {
-            _audioCounter = 20;
-            send_header = false;
-            //_activity = true;
-        }
+        send_header = false;
     }
 
     while (_wait_for_data && isAudioReady()) 
@@ -152,16 +149,10 @@ void CJPlayerStreamerResource::handleRequest(const Http::Request &request, Http:
         total = len / 2;
     }
 
-    this_thread::sleep_for(chrono::milliseconds(48));
-    
     if (isAudioReady() && isStreaming())
     {
         response.createContinuation();
         response.continuation();
-    }
-    else
-    {
-        //response.setStatus(200);
     }
 }
 
@@ -188,9 +179,5 @@ void CJPlayerStreamerResource::stopStreaming()
 
     ringBufferTimer.stopTimer();
     
-    this_thread::sleep_for(chrono::seconds(3));
-
-    _radioController->stop();
-
-    cout << "CJPlayerStreamerResource: stopped" << endl;
+    _radioController->getRadioServer()->log("info", "[CJPlayerStreamerResource] stopped.");
 }

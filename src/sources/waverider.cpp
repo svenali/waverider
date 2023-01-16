@@ -28,7 +28,7 @@ WaveriderApplication::WaveriderApplication(const WEnvironment& env, CRadioServer
 
     useStyleSheet("resources/svenali-bs.css", "all");
     WApplication *app = WApplication::instance();
-    cout << "Approot: " << app->appRoot() << endl;
+    //cout << "Approot: " << app->appRoot() << endl;
     messageResourceBundle().use(app->appRoot() + "forms/settings");
     
     //initialiseCss();
@@ -38,11 +38,11 @@ WaveriderApplication::WaveriderApplication(const WEnvironment& env, CRadioServer
 
 WaveriderApplication::~WaveriderApplication()
 {
-  cout << "Waverider::Application: cleanup" << endl;
+  //cout << "Waverider::Application: cleanup" << endl;
 }
 
 void WaveriderApplication::initialiseCss() {
-  cout << "Debug: " << "Initialising CSS App" << endl; 
+  //cout << "Debug: " << "Initialising CSS App" << endl; 
 
   auto aStyleRule = make_unique<WCssTextRule>("a", "color: #337ab7; text-decoration: none;");
   

@@ -140,11 +140,31 @@ class ProgrammeHandlerInterface {
          * decoder.  */
         virtual void onFrameErrors(int frameErrors) = 0;
 
+        /* Internetstreams over ICYCast Servers serving title- and
+         * artist informations. (@svenali: Used in CInternetDevice)
+         */
+        virtual void onMetaData(std::string metadata) = 0;
+
+        /* Internetstreams over ICYCast Servers serving title- and
+         * artist informations. (@svenali: Used in CInternetDevice)
+         */
+        virtual void onArtistAndTitle(std::string title) = 0;
+
+        /* Internetstreams over ICYCast Servers serving title- and
+         * artist informations. (@svenali: Used in CInternetDevice)
+         */
+        virtual void onNoCoverFound() = 0;
+
         /* New audio data is available. The sampleRate and the
          * stereo indicator may change at any time.
          * mode is an information related to the audio encoding
          * used.  */
         virtual void onNewAudio(std::vector<int16_t>&& audioData, int sampleRate, const std::string& mode) = 0;
+
+        /* New compressed AudioData is available and should be used
+         * if the compressed stream should be transfered to an extern programe or
+         * streaming application. */
+        virtual void onNewCompressedAudio(uint8_t* compressedData, int length, bool dabplussource) = 0;
 
         /* (DAB+ only) Reed-Solomon decoding error indicator, and
          * number of corrected errors.

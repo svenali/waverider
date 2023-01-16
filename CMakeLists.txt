@@ -3,6 +3,7 @@ project(waverider VERSION 0.1.0)
 
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
+    add_definitions(-DHAVE_ALSA=1)
 endif()
 
 include_directories(
@@ -25,6 +26,26 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 if (APPLE)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwthttp -lwt -lwtdbo -lwtdbosqlite3 -lboost_system -lboost_thread-mt -lboost_filesystem -lboost_program_options -lrtlsdr -lmpg123 -lfaad -lfftw3 -lfftw3f ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a")
 endif(APPLE)
+
+#FFMPEG
+find_path( AVCODEC_INCLUDE_DIR libavcodec/avcodec.h )
+find_library( AVCODEC_LIBRARY avcodec )
+find_path( AVFORMAT_INCLUDE_DIR libavformat/avformat.h )
+find_library( AVFORMAT_LIBRARY avformat )
+message("AVCODEC_INCLUDE_DIRS = ${AVCODEC_INCLUDE_DIR} ")
+message("AVCODEC_LIBRARY = ${AVCODEC_LIBRARY} ")
+message("AVFORMAT_INCLUDE_DIRS = ${AVFORMAT_INCLUDE_DIR} ")
+message("AVFORMAT_LIBRARY = ${AVFORMAT_LIBRARY} ")
+if (AVCODEC_LIBRARY)
+    message("AVCODEC FOUND TURNING HAVE_FFMPEG ON")
+    set(HAVE_FFMPEG TRUE)
+    add_definitions(-DHAVE_FFMPEG)
+    include_directories(${AVCODEC_INCLUDE})
+    include_directories(${AVFORMAT_INCLUDE})
+    if (APPLE)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwthttp -lwt -lwtdbo -lwtdbosqlite3 -lboost_system -lboost_thread-mt -lboost_filesystem -lboost_program_options -lrtlsdr -lmpg123 -lfaad -lfftw3 -lfftw3f -lavcodec -lavformat -lavutil -lswresample ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a")
+    endif(APPLE)
+endif()
 
 set(HEADERS
     lib/dab/charsets.h 
@@ -71,11 +92,36 @@ set(HEADERS
     lib/input/rtl_sdr.h
     lib/input/rtl_tcp.h
     lib/input/virtual_input.h
+    src/include/tool.h
+    src/include/calsaoutput.h
+    src/include/cstreamingserver.h
+    src/include/cinternetdevice.h
+    src/include/ccoverloader.h
+    src/include/cistreammetadata.h
+    src/include/caudiocompression.h
+    src/include/cmp3audiocompression.h
+    src/include/cflacaudiocompression.h
+    src/include/calacaudiocompression.h
+    src/include/caacaudiocompression.h
+    src/include/cmp2audiocompression.h
+    src/include/cnoaudiocompression.h
+    src/include/coriginalaudiocompression.h
+    src/include/cvorbisaudiocompression.h
+    src/include/cexportaudioresource.h
+    src/include/cinternet-audio.h
     src/include/cdeletepushbutton.h
     src/include/crecords.h
+    src/include/cradiobrowser.h
     src/include/csettings.h
+    src/include/cdbocountry.h
+    src/include/cdbointernetchannel.h
+    src/include/cdbobouquet.h
+    src/include/cdborecord.h
     src/include/csettingsform.h
     src/include/csettingsformview.h
+    src/include/cchannelitem.h
+    src/include/cbouqueteditorform.h
+    src/include/cbouqueteditorview.h
     src/include/service.h
     src/include/radio-server.h
     src/include/wwav-streamer-resource.h
@@ -120,11 +166,36 @@ set(SOURCES
     lib/input/raw_file.cpp
     lib/input/rtl_sdr.cpp
     lib/input/rtl_tcp.cpp
+    src/sources/tool.cpp
+    src/sources/calsaoutput.cpp
+    src/sources/cstreamingserver.cpp
+    src/sources/cinternetdevice.cpp
+    src/sources/ccoverloader.cpp
+    src/sources/cistreammetadata.cpp
+    src/sources/caudiocompression.cpp
+    src/sources/cmp3audiocompression.cpp
+    src/sources/cflacaudiocompression.cpp
+    src/sources/calacaudiocompression.cpp
+    src/sources/caacaudiocompression.cpp
+    src/sources/cmp2audiocompression.cpp
+    src/sources/cnoaudiocompression.cpp
+    src/sources/coriginalaudiocompression.cpp
+    src/sources/cvorbisaudiocompression.cpp
+    src/sources/cexportaudioresource.cpp
+    src/sources/cinternet-audio.cpp
     src/sources/cdeletepushbutton.cpp
     src/sources/crecords.cpp
+    src/sources/cradiobrowser.cpp
     src/sources/csettings.cpp
+    src/sources/cdbocountry.cpp
+    src/sources/cdbointernetchannel.cpp
+    src/sources/cdbobouquet.cpp
+    src/sources/cdborecord.cpp
     src/sources/csettingsform.cpp
     src/sources/csettingsformview.cpp
+    src/sources/cchannelitem.cpp
+    src/sources/cbouqueteditorform.cpp
+    src/sources/cbouqueteditorview.cpp
     src/sources/service.cpp
     src/sources/radio-server.cpp
     src/sources/wwav-streamer-resource.cpp
@@ -136,7 +207,13 @@ set(SOURCES
 add_executable(waverider main.cpp ${HEADERS} ${SOURCES})
 target_include_directories(waverider PRIVATE src src/include src/sources)
 if (LINUX)
-    TARGET_LINK_LIBRARIES(waverider wt wtdbo pthread wthttp wtdbosqlite3 boost_system boost_thread boost_filesystem boost_program_options rtlsdr mpg123 faad fftw3 fftw3f fec)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+    set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -latomic")
+    if (AVCODEC_LIBRARY)
+        TARGET_LINK_LIBRARIES(waverider wt wtdbo pthread wthttp wtdbosqlite3 boost_system boost_thread boost_filesystem boost_program_options rtlsdr mpg123 faad fftw3 asound fftw3f avcodec avformat avutil swresample ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a)
+    else (AVCODEC_LIBRARY)
+        TARGET_LINK_LIBRARIES(waverider wt wtdbo pthread wthttp wtdbosqlite3 boost_system boost_thread boost_filesystem boost_program_options rtlsdr mpg123 faad fftw3 asound fftw3f ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a)
+    endif (AVCODEC_LIBRARY)
     INCLUDE_DIRECTORIES(/usr/local/include/wt)
 endif(LINUX)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
