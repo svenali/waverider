@@ -118,7 +118,7 @@
 
  You should see such a website:
 
- ![Ansicht](<img src="screenshots/Ansicht.png" width="640px" height="auto">)
+ <img src="screenshots/Ansicht.png" width="640px" height="auto">
 
  Now please click on the button in the top right-hand corner and adjust **waverider** to the desired settings:
 
