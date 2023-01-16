@@ -119,11 +119,11 @@
 
  Danach sollte in etwa folgendes auf dem Bildschirm erscheinen:
 
- ![Ansicht](screenshots/Ansicht.png)
+ <img src="screenshots/Ansicht.png" width="640px" height="auto">
 
  Nun oben rechts auf das Rädchen (Einstellungen) klicken und entsprechend dem gewünschten anpassen:
 
- ![Settings](screenshots/Settings.png)
+ <img src="screenshots/Settings.png" width="400px" height="auto">
 
  In der Regel reicht die Anpassung des Aufnahmeordners. Des Weiteren kann hier auch die Auswahl des Codecs für die Aufzeichnung angepasst werden. Bei Internetradiosendern empfiehlt sich zunächst den Codec des Senders beizubehalten. Wenn die FFMPEG Unterstützung nicht mitinstalliert wurde, wird nur die WAV-Aufnahme zur Verfühung gestellt. Sollte der USB-Stick in einem anderen Gerät benutzt werden, muss für den DAB+ USB Stick die entsprechende Adresse eingegeben werden.
 
