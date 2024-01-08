@@ -1,4 +1,4 @@
-# Install script for directory: /Users/sven/arbeit/programmiersprachen/CPP/webdabplus/src/libs/fec/test
+# Install script for directory: /Users/sven/arbeit/programmiersprachen/CPP/waverider/lib/libs/fec/test
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

@@ -2,3 +2,7 @@
 *.json
 .DS_Store
 build/
+lib/libs/fec/CMakeFiles
+lib/libs/fec/CMakeFiles/*
+lib/libs/fec/CMakeFiles/test
+lib/libs/fec/CMakeFiles/test/*

@@ -1,4 +1,4 @@
-# Install script for directory: /Users/sven/arbeit/programmiersprachen/CPP/webdabplus/src/libs/fec
+# Install script for directory: /Users/sven/arbeit/programmiersprachen/CPP/waverider/lib/libs/fec
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/Users/sven/arbeit/programmiersprachen/CPP/webdabplus/src/libs/fec/test/cmake_install.cmake")
+  include("/Users/sven/arbeit/programmiersprachen/CPP/waverider/lib/libs/fec/test/cmake_install.cmake")
 
 endif()
 
@@ -51,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/sven/arbeit/programmiersprachen/CPP/webdabplus/src/libs/fec/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/sven/arbeit/programmiersprachen/CPP/waverider/lib/libs/fec/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

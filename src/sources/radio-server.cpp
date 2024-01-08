@@ -34,11 +34,11 @@ CRadioServer::CRadioServer(int argc, char *argv[], const std::string &wtConfigur
     source->setChannel(0x1258, "Klassik R. Movie", "5D");
     this->addResource(source, "/dab/0x1258"); */
 
-    _jplayerStreamer = make_unique<CJPlayerStreamerResource>(_radioController.get());
-    this->addResource(_jplayerStreamer.get(), "/dab/jplayer");
+    _jplayerStreamer = make_shared<CJPlayerStreamerResource>(_radioController.get());
+    this->addResource(_jplayerStreamer, "/dab/jplayer");
 
-    _exportAudioResource = make_unique<CExportAudioResource>(_radioController.get());
-    this->addResource(_exportAudioResource.get(), "/streaming");
+    _exportAudioResource = make_shared<CExportAudioResource>(_radioController.get());
+    this->addResource(_exportAudioResource, "/streaming");
 
     _dbConnector = make_unique<dbo::backend::Sqlite3>("waverider.db"); 
     _session.setConnection(std::move(_dbConnector));
@@ -57,9 +57,9 @@ CRadioServer::CRadioServer(int argc, char *argv[], const std::string &wtConfigur
     ifstream input(this->appRoot() + "mot/test-pattern-640.png", std::ios::binary );
     // copies all data into buffer
     vector<unsigned char> buffer(istreambuf_iterator<char>(input), {});
-    _motImage = make_unique<WMemoryResource>("image/png");
+    _motImage = make_shared<WMemoryResource>("image/png");
     _motImage->setData(buffer);
-    this->addResource(_motImage.get(), "/dab/mot");
+    this->addResource(_motImage, "/dab/mot");
     mot_resource_path = "/dab/mot";
 
     _radioBrowser = make_unique<CRadioBrowser>(*this, _settings()->_radioBrowserURL);
@@ -810,9 +810,9 @@ void CRadioServer::updateMOT(mot_file_t mot_file)
 
     mot_resource_path = "/dab/mot_" + s.str();
 
-    _motImage = make_unique<WMemoryResource>(mimetype);
+    _motImage = make_shared<WMemoryResource>(mimetype);
     _motImage->setData(mot_file.data);
-    this->addResource(_motImage.get(), mot_resource_path);
+    this->addResource(_motImage, mot_resource_path);
 
     postRadioEvent(RadioEvent(0, mot_resource_path, "", EventAction::motChange));
 }
@@ -914,7 +914,7 @@ void CRadioServer::addWebChannel(string name, string url)
     service->_type = "web";
     service->_url = url;
 
-    _session.add(move(service));
+    _session.add(std::move(service));
     _session.flush();
 }
 
@@ -1256,7 +1256,7 @@ void CRadioServer::getSavedDABChannels()
     dbo::Transaction transaction{_session};
     typedef dbo::collection< dbo::ptr<CService> > dbDabChannels;
     dbDabChannels db_dabplus = _session.find<CService>().where("Type = ?").bind("dab+");
-
+    
     map<string, string> export_channels;
 
     for (auto it = begin(db_dabplus); it != end(db_dabplus); ++it)
@@ -1582,7 +1582,8 @@ void CRadioServer::showContentOfRecordedFile(string filename)
                         break;
         }
 
-        WMemoryResource *wm = new WMemoryResource(mimetype);
+        //WMemoryResource *wm = new WMemoryResource(mimetype);
+        shared_ptr<WMemoryResource> wm = make_shared<WMemoryResource>(mimetype);
         wm->setData(r.get()->cover);
         string dr = "/recordedFile/" + to_string(rand()) + "_" + to_string(lfdNr);
         this->addResource(wm, dr);
@@ -1595,7 +1596,7 @@ void CRadioServer::showContentOfRecordedFile(string filename)
     postRecordFileEvent(RecordFileEvent(content));
 }
 
-void CRadioServer::addResource(WResource *r, const string& path)
+void CRadioServer::addResource(std::shared_ptr<WResource> r, const string& path)
 {
     WServer::addResource(r, path);
 

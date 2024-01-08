@@ -334,7 +334,7 @@ class CRadioServer : public WServer
         void showContentOfRecordedFile(string filename);
 
         /* overwrites the supermethod and collect the ressources in a vector */
-        void addResource(WResource *r, const string& path);
+        void addResource(std::shared_ptr<WResource> r, const string& path);
         /* for instance: deleteRessources("/recordedFile") */
         void deleteResources(string mainPath);
 
@@ -353,9 +353,9 @@ class CRadioServer : public WServer
 
         CStreamingServer* _streamingServer;
         unique_ptr<CRadioController> _radioController; 
-        unique_ptr<CJPlayerStreamerResource> _jplayerStreamer;
-        unique_ptr<CExportAudioResource> _exportAudioResource;
-        unique_ptr<WMemoryResource> _motImage;
+        shared_ptr<CJPlayerStreamerResource> _jplayerStreamer;
+        shared_ptr<CExportAudioResource> _exportAudioResource;
+        shared_ptr<WMemoryResource> _motImage;
         string mot_resource_path;
         string _playingChannel;     // For Records
         string _playingURL;         // For NoCoverFound Emits

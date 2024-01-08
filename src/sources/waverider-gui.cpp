@@ -77,7 +77,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
         unique_ptr<WText> title = make_unique<WText>("<h2>Waverider</h2>");
         title->setTextAlignment(AlignmentFlag::Center);
         title->setStyleClass("north-widget col-xs-7 col-md-7 col-lg-7");
-        header_row->addWidget(move(title));
+        header_row->addWidget(std::move(title));
     }
     
     auto row_middle = make_unique<WContainerWidget>();
@@ -98,7 +98,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     _channelWebScanItem->setStyleClass("h4");
     // connect vor move!
     _channelWebScanItem->clicked().connect(this, &WaveriderGUI::scan_internet);
-    mWebChannelMenu->addItem(move(_channelWebScanItem)); 
+    mWebChannelMenu->addItem(std::move(_channelWebScanItem)); 
     
     mMainWidget = make_unique<WContainerWidget>();
     mMainWidget->setStyleClass("east-widget col-xs-12 col-md-9 col-lg-9");
@@ -175,12 +175,12 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
 
     if (!app->environment().agentIsMobileWebKit()) 
     {
-        header_row->addWidget(move(bouquetEditorButton));
-        header_row->addWidget(move(fileDownloadButton));
-        header_row->addWidget(move(settingsButton));
+        header_row->addWidget(std::move(bouquetEditorButton));
+        header_row->addWidget(std::move(fileDownloadButton));
+        header_row->addWidget(std::move(settingsButton));
     }
     
-    this->addWidget(move(header_row));
+    this->addWidget(std::move(header_row));
 
     /*********************************************************************************************
      *   Service Info
@@ -195,7 +195,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     unique_ptr<WText> serviceTitle = make_unique<WText>("<h5>Service Overview</h5>");
     serviceTitle->setTextAlignment(AlignmentFlag::Center);
     serviceTitle->setStyleClass("main-north-widget");
-    infoServiceWidget->addWidget(move(serviceTitle));
+    infoServiceWidget->addWidget(std::move(serviceTitle));
 
     _firstRow = infoServiceWidget->addNew<WContainerWidget>();
     _firstRow->setStyleClass("row");
@@ -208,7 +208,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
 
     auto speaker_img = make_unique<WImage>("resources/icons/speaker.png");
     speaker_img->setStyleClass("col-xs-1 col-md-1 col-lg-1");
-    _firstRow->addWidget(move(speaker_img));
+    _firstRow->addWidget(std::move(speaker_img));
 
     //auto serviceInfoRowInMainWidget = make_unique<WContainerWidget>();
     WContainerWidget* serviceInfoRowInMainWidget = infoServiceWidget->addNew<WContainerWidget>();
@@ -245,7 +245,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
         /* sb->addItem("Intern");
         sb->setCurrentIndex(0);*/
         
-        mediaPlayerRow->addWidget(move(mediaLeftFromPlayerContainer));
+        mediaPlayerRow->addWidget(std::move(mediaLeftFromPlayerContainer));
 
         //auto mediaPlayerContainer = mediaPlayerRow->addNew<WContainerWidget>();
         _mediaPlayerContainer = mediaPlayerRow->addNew<WStackedWidget>();
@@ -293,10 +293,10 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     _channelScanItem->setStyleClass("h4");
     // connect vor move!
     _channelScanItem->clicked().connect(this, &WaveriderGUI::scan_dab);
-    mChannelMenu->addItem(move(_channelScanItem));    
+    mChannelMenu->addItem(std::move(_channelScanItem));    
     
-    row_middle->addWidget(move(mMainWidget));
-    this->addWidget(move(row_middle));
+    row_middle->addWidget(std::move(mMainWidget));
+    this->addWidget(std::move(row_middle));
 
     /** Bouquet Channels */
     _favoriteText = _BouquetChannelContainer->addNew<WText>("<h3>Favoriten</h3>");
@@ -312,7 +312,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
     unique_ptr<WText> motTitle = make_unique<WText>("<h5>MOT Slide Show</h5>");
     motTitle->setTextAlignment(AlignmentFlag::Center);
     motTitle->setStyleClass("main-north-widget");
-    motServiceWidget->addWidget(move(motTitle));
+    motServiceWidget->addWidget(std::move(motTitle));
 
     _motrow = motServiceWidget->addNew<WContainerWidget>();
     _motrow->setStyleClass("mot-image col-xs-12 col-md-12 col-lg-12 text-center");
@@ -374,7 +374,7 @@ WaveriderGUI::WaveriderGUI(CRadioServer& radioServer)
         quitApp->clicked().connect(this, &WaveriderGUI::quit);
     }
 
-    this->addWidget(move(last_row));
+    this->addWidget(std::move(last_row));
 
     _radioServer.log("notice", "User uses: " + app->environment().userAgent());
 
@@ -426,7 +426,7 @@ void WaveriderGUI::errorEvent(const ErrorEvent& event)
     WPushButton *ok = wmb->button(StandardButton::Ok);
     ok->clicked().connect(wmb.get(), &Wt::WDialog::accept);
     //wmb.get()->finished().connect(this, &MyClass::dialogDone);
-    this->addChild(move(wmb));
+    this->addChild(std::move(wmb));
 
     recordButton->setIcon("");
     recordButton->setText("Record");
@@ -535,9 +535,9 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
         item->channelClicked().connect(this, &WaveriderGUI::setChannel);
 
         if (!_bouquetMode)
-            mChannelMenu->addItem(move(item)); 
+            mChannelMenu->addItem(std::move(item)); 
         else
-            mBouquetChannelMenu->addItem(move(item));
+            mBouquetChannelMenu->addItem(std::move(item));
 
         if (_removeChannelScanItem)
         {
@@ -552,9 +552,9 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
         item->channelClicked().connect(this, &WaveriderGUI::setWebChannel);
 
         if (!_bouquetMode)
-            mWebChannelMenu->addItem(move(item));
+            mWebChannelMenu->addItem(std::move(item));
         else
-            mBouquetChannelMenu->addItem(move(item));
+            mBouquetChannelMenu->addItem(std::move(item));
 
         if (_removeWebChannelScanItem)
         {
@@ -567,7 +567,7 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
         auto itemNext = make_unique<CStationItem>("Next", "", nullptr);
         itemNext->setStyleClass("h4");
         itemNext->channelClicked().connect(this, &WaveriderGUI::setWebChannel);
-        mWebChannelMenu->addItem(move(itemNext));
+        mWebChannelMenu->addItem(std::move(itemNext));
     }
     else if (event.getAction() == EventAction::removeNextLink)
     {
@@ -585,7 +585,7 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
         auto itemPrev = make_unique<CStationItem>("Prev", "", nullptr);
         itemPrev->setStyleClass("h4");
         itemPrev->channelClicked().connect(this, &WaveriderGUI::setWebChannel);
-        mWebChannelMenu->addItem(move(itemPrev));
+        mWebChannelMenu->addItem(std::move(itemPrev));
     }
     else if (event.getAction() == EventAction::removePrevLink)
     {
@@ -604,14 +604,14 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
         auto item = make_unique<CStationItem>(event.getSignalStrengthImage(), nullptr);
         item->setStyleClass("h4");
         item->channelClicked().connect(this, &WaveriderGUI::loadBouquetChannels);
-        mBouquetChannelMenu->addItem(move(item));   
+        mBouquetChannelMenu->addItem(std::move(item));   
     }
     else if (event.getAction() == EventAction::backToBouquets)
     {
         auto itemPrev = make_unique<CStationItem>("Prev", "", nullptr);
         itemPrev->setStyleClass("h4");
         itemPrev->channelClicked().connect(this, &WaveriderGUI::loadBouquets);
-        mBouquetChannelMenu->addItem(move(itemPrev));   
+        mBouquetChannelMenu->addItem(std::move(itemPrev));   
     }
     else if (event.getAction() == EventAction::channelChange)
     {

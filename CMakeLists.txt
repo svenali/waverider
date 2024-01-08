@@ -1,10 +1,14 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(waverider VERSION 0.1.0)
 
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
     add_definitions(-DHAVE_ALSA=1)
 endif()
+
+# Wt
+find_library( WT_LIBRARY wt )
+message("WT_LIBRARY = ${WT_LIBRARY} ")
 
 include_directories(
     "/usr/local/include"

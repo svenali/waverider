@@ -19,8 +19,7 @@
  */
 #include "waverider.h"
 
-WaveriderApplication::WaveriderApplication(const WEnvironment& env, CRadioServer& radio_server)
-    :   WApplication(env)
+WaveriderApplication::WaveriderApplication(const WEnvironment& env, CRadioServer& radio_server) : WApplication(env)
 {
     setTitle("Waverider DAB+ Digital Radio");
     //setCssTheme("polished");  // First Try

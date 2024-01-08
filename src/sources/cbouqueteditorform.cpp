@@ -161,7 +161,7 @@ void CBouquetEditorForm::updateFilter2(const vector<string> items)
     {
         auto newItem = make_unique<WStandardItem>();
         newItem->setText(*it); 
-        _filter_2->appendRow(move(newItem));
+        _filter_2->appendRow(std::move(newItem));
     }
 }
 
@@ -172,7 +172,7 @@ void CBouquetEditorForm::updateWebChannels(const map<string, string> items)
     {
         auto newItem = make_unique<CChannelItem>();
         newItem->setData(it->first, it->second);
-        _web_channels->appendRow(move(newItem));
+        _web_channels->appendRow(std::move(newItem));
     }
 }
 
@@ -183,7 +183,7 @@ void CBouquetEditorForm::updateDabChannels(const map<string, string> items)
     {
         auto newItem = make_unique<CChannelItem>();
         newItem->setData(it->first, it->second);
-        _dab_channels->appendRow(move(newItem));
+        _dab_channels->appendRow(std::move(newItem));
     }    
 }
 
@@ -263,7 +263,7 @@ void CBouquetEditorForm::addNewBouquet(string bouquet_name)
 
     auto standard_item = make_unique<WStandardItem>();
     standard_item->setText(bouquet_name);
-    _bouquets_selection->appendRow(move(standard_item));
+    _bouquets_selection->appendRow(std::move(standard_item));
 }
 
 void CBouquetEditorForm::delBouquet(string bouquet_name)
@@ -326,7 +326,7 @@ bool CBouquetEditorForm::addChannelToBouqet(string bouquet_name, string uuid, st
     {
         auto newItem = make_unique<CChannelItem>();
         newItem->setData(uuid, name);
-        _channels_in_bouquet->appendRow(move(newItem));
+        _channels_in_bouquet->appendRow(std::move(newItem));
     }
 }
 
@@ -340,7 +340,7 @@ bool CBouquetEditorForm::actualizeChannelInBouquetModel(string bouquet_name)
     {
         auto newItem = make_unique<CChannelItem>();
         newItem->setData(it->first, it->second);
-        _channels_in_bouquet->appendRow(move(newItem));
+        _channels_in_bouquet->appendRow(std::move(newItem));
     }
 }
 
@@ -354,11 +354,11 @@ void CBouquetEditorForm::loadBouquetsFromDB(const ChannelToBouquetMap b)
     {
         auto standard_item = make_unique<WStandardItem>();
         standard_item->setText(it->first);
-        _bouquets_selection->appendRow(move(standard_item));
+        _bouquets_selection->appendRow(std::move(standard_item));
         
         auto standard_item_2 = make_unique<WStandardItem>();
         standard_item_2->setText(it->first);
-        _bouquets->appendRow(move(standard_item_2));
+        _bouquets->appendRow(std::move(standard_item_2));
 
         _channelToBouquetMap[it->first] = it->second;
         
@@ -370,7 +370,7 @@ void CBouquetEditorForm::loadBouquetsFromDB(const ChannelToBouquetMap b)
             {
                 auto newItem = make_unique<CChannelItem>();
                 newItem->setData(it2->first, it2->second);
-                _channels_in_bouquet->appendRow(move(newItem));
+                _channels_in_bouquet->appendRow(std::move(newItem));
             }
         }
 

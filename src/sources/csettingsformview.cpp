@@ -48,7 +48,7 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
         }
 	});
 
-    setFormWidget(CSettingsForm::DeviceField, move(deviceCB),
+    setFormWidget(CSettingsForm::DeviceField, std::move(deviceCB),
         [=] { 
             // updateViewValue()
             string code = asString(form->value(CSettingsForm::DeviceField)).toUTF8();
@@ -78,13 +78,13 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
 
     //recordPath->changed().connect(this, &CSettings::update);
     setFormWidget(CSettingsForm::IPAddress, make_unique<WLineEdit>());
-    setFormWidget(CSettingsForm::Port, move(port_line));
-    setFormWidget(CSettingsForm::RecordPath, move(recordPath));
-    setFormWidget(CSettingsForm::RadioBrowserURL, move(radioBrowserURL));
+    setFormWidget(CSettingsForm::Port, std::move(port_line));
+    setFormWidget(CSettingsForm::RecordPath, std::move(recordPath));
+    setFormWidget(CSettingsForm::RadioBrowserURL, std::move(radioBrowserURL));
 
     auto donotreencode = make_unique<WCheckBox>();
     auto donotreencode_ = donotreencode.get();
-    setFormWidget(CSettingsForm::DoNotReEncodeIChannels, move(donotreencode),
+    setFormWidget(CSettingsForm::DoNotReEncodeIChannels, std::move(donotreencode),
         [=] { 
             // updateViewValue()
             string state = asString(form->value(CSettingsForm::DoNotReEncodeIChannels)).toUTF8();
@@ -113,7 +113,7 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
 
     auto metadata = make_unique<WCheckBox>();
     auto metadata_ = metadata.get();
-    setFormWidget(CSettingsForm::RetrieveMetadata, move(metadata),
+    setFormWidget(CSettingsForm::RetrieveMetadata, std::move(metadata),
         [=] { 
             // updateViewValue()
             string state = asString(form->value(CSettingsForm::RetrieveMetadata)).toUTF8();
@@ -142,7 +142,7 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
 
     auto saveMetadata = make_unique<WCheckBox>();
     auto saveMetadata_ = saveMetadata.get();
-    setFormWidget(CSettingsForm::SaveMetadata, move(saveMetadata),
+    setFormWidget(CSettingsForm::SaveMetadata, std::move(saveMetadata),
         [=] { 
             // updateViewValue()
             string state = asString(form->value(CSettingsForm::SaveMetadata)).toUTF8();
@@ -182,7 +182,7 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
         }
 	});
 
-    setFormWidget(CSettingsForm::Streaming, move(streaming),
+    setFormWidget(CSettingsForm::Streaming, std::move(streaming),
         [=] { 
             // updateViewValue()
             string state = asString(form->value(CSettingsForm::Streaming)).toUTF8();
@@ -216,7 +216,7 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
     auto streamingFormat_ = streamingFormat.get();
     streamingFormat->setModel(form->streamingFormatModel());
 
-    setFormWidget(CSettingsForm::StreamingFormat, move(streamingFormat),
+    setFormWidget(CSettingsForm::StreamingFormat, std::move(streamingFormat),
         [=] { 
             // updateViewValue()
             string code = asString(form->value(CSettingsForm::StreamingFormat)).toUTF8();
@@ -234,7 +234,7 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
     auto recordFormat_ = recordFormat.get();
     recordFormat->setModel(form->recordFormatModel());
 
-    setFormWidget(CSettingsForm::RecordFormat, move(recordFormat),
+    setFormWidget(CSettingsForm::RecordFormat, std::move(recordFormat),
         [=] { 
             // updateViewValue()
             string code = asString(form->value(CSettingsForm::RecordFormat)).toUTF8();
@@ -250,7 +250,7 @@ CSettingsFormView::CSettingsFormView(WaveriderGUI& gui)
 
     auto streamingAddress  = make_unique<WLineEdit>();
     auto streamingAddress_ = streamingAddress.get();
-    setFormWidget(CSettingsForm::StreamingAddress, move(streamingAddress));
+    setFormWidget(CSettingsForm::StreamingAddress, std::move(streamingAddress));
 
     WString title = Wt::WString("Settings");
     bindString("title", title);

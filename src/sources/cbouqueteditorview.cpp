@@ -35,7 +35,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     bouquets->setModel(_form->getbouquet());
     auto bouquets_ptr = bouquets.get();
     //bindWidget("bouquets", move(bouquets));
-    setFormWidget(CBouquetEditorForm::bouquets, move(bouquets),
+    setFormWidget(CBouquetEditorForm::bouquets, std::move(bouquets),
     [=]{
         // updateViewValue()
         string title = asString(_form->value(CBouquetEditorForm::bouquets)).toUTF8();
@@ -51,7 +51,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     auto bouquet_line = make_unique<WLineEdit>();
     bouquet_line->setWidth("200px");
 
-    bindWidget("bouquet-name", move(bouquet_line));
+    bindWidget("bouquet-name", std::move(bouquet_line));
 
     auto button = bindWidget("add-bouquet-button", make_unique<WPushButton>("Hinzufügen"));
     button->clicked().connect(this, &CBouquetEditorView::newBouquet);
@@ -66,7 +66,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     bouquet_selection->clicked().connect(this, &CBouquetEditorView::channelInBouquetClicked);
     auto bouquet_selection_ptr = bouquet_selection.get();
     //bindWidget("bouquet-selection", move(bouquet_selection));
-    setFormWidget(CBouquetEditorForm::bouquet_selection, move(bouquet_selection),
+    setFormWidget(CBouquetEditorForm::bouquet_selection, std::move(bouquet_selection),
     [=]{
         // updateViewValue()
         string title = asString(_form->value(CBouquetEditorForm::bouquet_selection)).toUTF8();
@@ -84,7 +84,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     channels_in_bouquet->setModel(_form->getChannelsInBouquet());
     auto channels_in_bouquet_ptr = channels_in_bouquet.get();
     //bindWidget("channels-in-bouquet", move(channels_in_bouquet));
-    setFormWidget(CBouquetEditorForm::channels_in_bouquet, move(channels_in_bouquet),
+    setFormWidget(CBouquetEditorForm::channels_in_bouquet, std::move(channels_in_bouquet),
     [=]{
         // updateViewValue()
         string title = asString(_form->value(CBouquetEditorForm::channels_in_bouquet)).toUTF8();
@@ -105,7 +105,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     auto _dab_channels_ptr = dab_channels.get();
     dab_channels->setModel(_form->getDabChannels());
     dab_channels->activated().connect(this, &CBouquetEditorView::dabChannelActivated);
-    setFormWidget(CBouquetEditorForm::dab_channels, move(dab_channels),
+    setFormWidget(CBouquetEditorForm::dab_channels, std::move(dab_channels),
     [=]{
         // updateViewValue()
         string title = asString(_form->value(CBouquetEditorForm::dab_channels)).toUTF8();
@@ -129,7 +129,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     filter1->activated().connect(this, &CBouquetEditorView::updateFilter2);
     // connection between model and view and settings.xml
     auto filter1_ptr = filter1.get();
-    setFormWidget(CBouquetEditorForm::filter_1, move(filter1),
+    setFormWidget(CBouquetEditorForm::filter_1, std::move(filter1),
     [=]{
         // updateViewValue()
         string title = asString(_form->value(CBouquetEditorForm::filter_1)).toUTF8();
@@ -146,7 +146,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     filter2->setModel(_form->getFilter2());
     filter2->activated().connect(this, &CBouquetEditorView::showChannelList);
     auto filter2_ptr = filter2.get();
-    setFormWidget(CBouquetEditorForm::filter_2, move(filter2), 
+    setFormWidget(CBouquetEditorForm::filter_2, std::move(filter2), 
     [=]{
         // updateViewValue()
         string title = asString(_form->value(CBouquetEditorForm::filter_2)).toUTF8();
@@ -164,7 +164,7 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     //web_channels->setSelectionMode(Wt::SelectionMode::Extended);
     web_channels->setModel(_form->getWebChannels());
     web_channels->activated().connect(this, &CBouquetEditorView::webChannelActivated);
-    setFormWidget(CBouquetEditorForm::web_channels, move(web_channels),
+    setFormWidget(CBouquetEditorForm::web_channels, std::move(web_channels),
     [=]{
         // updateViewValue()
         string title = asString(_form->value(CBouquetEditorForm::web_channels)).toUTF8();
@@ -188,21 +188,21 @@ CBouquetEditorView::CBouquetEditorView(WaveriderGUI& gui)
     station_name_line->keyWentUp().connect(this, [=]{
         _form->setValue(CBouquetEditorForm::station_name, _station_name_line->text());    
     });
-    setFormWidget(CBouquetEditorForm::station_name, move(station_name_line));
+    setFormWidget(CBouquetEditorForm::station_name, std::move(station_name_line));
     auto url_line = make_unique<WLineEdit>();
     url_line->setWidth("260px");
     auto _url_line = url_line.get();
     url_line->keyWentUp().connect(this, [=]{
         _form->setValue(CBouquetEditorForm::url, _url_line->text());    
     });
-    setFormWidget(CBouquetEditorForm::url, move(url_line));
+    setFormWidget(CBouquetEditorForm::url, std::move(url_line));
     auto url_line_logo = make_unique<WLineEdit>();
     url_line_logo->setWidth("260px");
     auto _url_line_logo = url_line_logo.get();
     url_line_logo->keyWentUp().connect(this, [=]{
         _form->setValue(CBouquetEditorForm::url_logo, _url_line_logo->text());    
     });
-    setFormWidget(CBouquetEditorForm::url_logo, move(url_line_logo));
+    setFormWidget(CBouquetEditorForm::url_logo, std::move(url_line_logo));
     auto add_station_button = bindWidget("add-station-button", 
                                 make_unique<WPushButton>("Hinzufügen"));
     add_station_button->clicked().connect(this, &CBouquetEditorView::addNewChannelToBouquet);
@@ -367,7 +367,7 @@ void CBouquetEditorView::addDabChannelToBouquet()
         wmb->show();
         WPushButton *ok = wmb->button(StandardButton::Ok);
         ok->clicked().connect(wmb.get(), &Wt::WDialog::accept);
-        this->addChild(move(wmb));
+        this->addChild(std::move(wmb));
 
         WApplication::instance()->triggerUpdate();
     }
@@ -394,7 +394,7 @@ void CBouquetEditorView::addWebChannelToBouquet()
         wmb->show();
         WPushButton *ok = wmb->button(StandardButton::Ok);
         ok->clicked().connect(wmb.get(), &Wt::WDialog::accept);
-        this->addChild(move(wmb));
+        this->addChild(std::move(wmb));
 
         WApplication::instance()->triggerUpdate();
     }
@@ -426,7 +426,7 @@ void CBouquetEditorView::addNewChannelToBouquet()
         wmb->show();
         WPushButton *ok = wmb->button(StandardButton::Ok);
         ok->clicked().connect(wmb.get(), &Wt::WDialog::accept);
-        this->addChild(move(wmb));
+        this->addChild(std::move(wmb));
 
         WApplication::instance()->triggerUpdate();
     }
