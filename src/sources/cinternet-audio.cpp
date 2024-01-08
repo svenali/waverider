@@ -431,7 +431,7 @@ void CInternetAudio::PutAudio(const uint8_t *data, size_t len)
         }
     }
     //cerr << "InternetAudio is sending ... " << audio.size() << endl;
-    _myProgrammeHandler.onNewAudio(move(audio), audioSamplerate, audioFormat);
+    _myProgrammeHandler.onNewAudio(std::move(audio), audioSamplerate, audioFormat);
 }
 
 void CInternetAudio::ProcessFormat() {

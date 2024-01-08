@@ -61,18 +61,18 @@ CStationItem::CStationItem(uint32_t serviceID, string serviceName, string channe
     
     auto hexString = make_unique<WText>(this->getServiceIDASHexString());
     hexString->setStyleClass("col-xs-4 col-md-4 col-lg-4");
-    infoContainer->addWidget(move(hexString));
+    infoContainer->addWidget(std::move(hexString));
 
     auto channelIDString = make_unique<WText>(channelID);
     channelIDString->setStyleClass("col-xs-8 col-md-8 col-lg-8");
-    infoContainer->addWidget(move(channelIDString));
+    infoContainer->addWidget(std::move(channelIDString));
 
     serviceStationWidget->addStyleClass("serviceStation");
-    serviceStationWidget->addWidget(move(infoContainer));
+    serviceStationWidget->addWidget(std::move(infoContainer));
 
     this->clicked().connect(this, &CStationItem::stationLinkClicked);
 
-    this->addWidget(move(serviceStationWidget));
+    this->addWidget(std::move(serviceStationWidget));
 }
 
 CStationItem::CStationItem(string serviceName, string url, unique_ptr<WWidget> contents)
@@ -91,18 +91,18 @@ CStationItem::CStationItem(string serviceName, string url, unique_ptr<WWidget> c
     
     auto urlString = make_unique<WText>(this->getWebURL());
     urlString->setStyleClass("col-xs-12 col-md-12 col-lg-12");
-    infoContainer->addWidget(move(urlString));
+    infoContainer->addWidget(std::move(urlString));
 
     /* auto channelIDString = make_unique<WText>(channelID);
     channelIDString->setStyleClass("col-xs-8 col-md-8 col-lg-8");
     infoContainer->addWidget(move(channelIDString)); */
 
     serviceStationWidget->addStyleClass("serviceStation-web");
-    serviceStationWidget->addWidget(move(infoContainer));
+    serviceStationWidget->addWidget(std::move(infoContainer));
 
     this->clicked().connect(this, &CStationItem::stationLinkClicked);
 
-    this->addWidget(move(serviceStationWidget));
+    this->addWidget(std::move(serviceStationWidget));
 }
 
 CStationItem::~CStationItem()

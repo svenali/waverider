@@ -45,5 +45,5 @@ void WaveriderApplication::initialiseCss() {
 
   auto aStyleRule = make_unique<WCssTextRule>("a", "color: #337ab7; text-decoration: none;");
   
-  styleSheet().addRule(move(aStyleRule));
+  styleSheet().addRule(std::move(aStyleRule));
 }

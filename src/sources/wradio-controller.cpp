@@ -398,7 +398,7 @@ void CRadioController::sendPCMToSpeakers(std::vector<int16_t>&& audioData, int s
         _alsaOutput = make_unique<CAlsaOutput>(2, audioSampleRate, _currentAudioDevice, this);
     }
     
-    _alsaOutput->playPCM(move(audioData));
+    _alsaOutput->playPCM(std::move(audioData));
 #endif
 }
 
@@ -430,7 +430,7 @@ void CRadioController::onNewAudio(std::vector<int16_t>&& audioData, int sampleRa
     this->saveAudioStreamAsFile(audioData.data(), static_cast<int32_t>(audioData.size()), sampleRate);
 
     // if possible, output to real speakers
-    this->sendPCMToSpeakers(move(audioData), sampleRate, mode, newAudioOutput);
+    this->sendPCMToSpeakers(std::move(audioData), sampleRate, mode, newAudioOutput);
 }
 
 void CRadioController::setRecordToDir(string dir) 

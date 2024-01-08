@@ -112,7 +112,7 @@ void CRecords::initDownloadPage()
         }
     }
 
-    _files->addWidget(move(table));
+    _files->addWidget(std::move(table));
 }
 
 void CRecords::updateDownloadPage()
@@ -187,11 +187,11 @@ void CRecords::initContentPage(vector<vector<string>> c)
         _ContentTable->elementAt(row, 3)->addNew<WText>(content[2]);
         auto image = make_unique<WImage>(content[3]);
         image->setWidth("150px");
-        _ContentTable->elementAt(row, 4)->addWidget(move(image));
+        _ContentTable->elementAt(row, 4)->addWidget(std::move(image));
         _ContentTable->elementAt(row, 4)->setWidth(WLength("150px"));
 
         row++;
     }
 
-    _filecontent->addWidget(move(table));
+    _filecontent->addWidget(std::move(table));
 }
