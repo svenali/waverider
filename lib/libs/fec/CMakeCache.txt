@@ -385,8 +385,6 @@ CMAKE_UNAME:INTERNAL=/usr/local/opt/coreutils/libexec/gnubin/uname
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Have function memmove
 HAVE_MEMMOVE:INTERNAL=1
-//Have include memory.h
-HAVE_MEMORY_H:INTERNAL=1
 //Have function memset
 HAVE_MEMSET:INTERNAL=1
 //Have include stdio.h
@@ -395,6 +393,4 @@ HAVE_STDIO_H:INTERNAL=1
 HAVE_STDLIB_H:INTERNAL=1
 //Have include string.h
 HAVE_STRING_H:INTERNAL=1
-//Have include time.h
-HAVE_TIME_H:INTERNAL=1
 

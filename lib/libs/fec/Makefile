@@ -129,32 +129,6 @@ fec/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/fec.dir/build.make CMakeFiles/fec.dir/build
 .PHONY : fec/fast
 
-#=============================================================================
-# Target rules for targets named rs_speedtest
-
-# Build rule for target.
-rs_speedtest: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 rs_speedtest
-.PHONY : rs_speedtest
-
-# fast build rule for target.
-rs_speedtest/fast:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/rs_speedtest.dir/build.make test/CMakeFiles/rs_speedtest.dir/build
-.PHONY : rs_speedtest/fast
-
-#=============================================================================
-# Target rules for targets named rstest
-
-# Build rule for target.
-rstest: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 rstest
-.PHONY : rstest
-
-# fast build rule for target.
-rstest/fast:
-	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/rstest.dir/build.make test/CMakeFiles/rstest.dir/build
-.PHONY : rstest/fast
-
 # target to build an object file
 decode_rs_char.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/fec.dir/build.make CMakeFiles/fec.dir/decode_rs_char.o
@@ -209,8 +183,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... fec"
-	@echo "... rs_speedtest"
-	@echo "... rstest"
 	@echo "... decode_rs_char.o"
 	@echo "... decode_rs_char.i"
 	@echo "... decode_rs_char.s"
