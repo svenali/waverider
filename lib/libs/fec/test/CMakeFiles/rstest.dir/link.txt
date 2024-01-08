@@ -1,1 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/cc  -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/rstest.dir/rstest.o -o rstest  ../libfec.a /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk/usr/lib/libm.tbd 
