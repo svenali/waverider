@@ -731,21 +731,21 @@ void CRadioController::onNewImpulseResponse(std::vector<float>&& data)
 {
     //cout << "CRadioController::onNewImpulseResponse: Not implmented yet" << endl;        
     lock_guard<mutex> lock(impulseResponseBufferMutex);
-    impulseResponseBuffer = move(data);
+    impulseResponseBuffer = std::move(data);
 }
 
 void CRadioController::onConstellationPoints(std::vector<DSPCOMPLEX>&& data)
 {
     //cout << "CRadioController::onConstellationPoints: Not implmented yet" << endl;        
     lock_guard<mutex> lock(constellationPointBufferMutex);
-    constellationPointBuffer = move(data);
+    constellationPointBuffer = std::move(data);
 }
 
 void CRadioController::onNewNullSymbol(std::vector<DSPCOMPLEX>&& data)
 {
     //cout << "CRadioController::onNewNullSymbol: Not implmented yet" << endl;  
     lock_guard<mutex> lock(nullSymbolBufferMutex);
-    nullSymbolBuffer = move(data);      
+    nullSymbolBuffer = std::move(data);      
 }
 
 void CRadioController::onTIIMeasurement(tii_measurement_t&& m)

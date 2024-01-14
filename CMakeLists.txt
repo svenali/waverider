@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(waverider VERSION 0.1.0)
 
+# Default to debug build
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
     add_definitions(-DHAVE_ALSA=1)

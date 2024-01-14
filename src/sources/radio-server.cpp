@@ -571,11 +571,11 @@ void CRadioServer::loadChannelsInBouquet(string bouquetName)
     {
         dbo::Transaction transaction{_session};
         dbo::ptr<CDBOBouquet> bouquet = _session.find<CDBOBouquet>().where("name = ?").bind(bouquetName);
-
+        
         for(auto it = begin(bouquet->services); it != end(bouquet->services); ++it)
         {
             dbo::ptr<CService> s = *it;
-
+            
             if (s->_type == "dab+")
             {
                 uint32_t serviceid = static_cast<uint32_t>(stoul(s->_serviceID.c_str(), NULL, 16));
@@ -593,6 +593,7 @@ void CRadioServer::loadChannelsInBouquet(string bouquetName)
     catch (dbo::Exception e)
     {
         // Database not exists. Do scan.
+        cerr << "DB Error: " << e.what() << endl;
     }    
 }
 

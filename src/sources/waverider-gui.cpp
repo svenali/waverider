@@ -602,6 +602,7 @@ void WaveriderGUI::radioEvent(const RadioEvent& event)
     {
         // add Bouquet
         auto item = make_unique<CStationItem>(event.getSignalStrengthImage(), nullptr);
+        cout << "Bouequet: " << event.getSignalStrengthImage() << endl;
         item->setStyleClass("h4");
         item->channelClicked().connect(this, &WaveriderGUI::loadBouquetChannels);
         mBouquetChannelMenu->addItem(std::move(item));   
@@ -899,17 +900,18 @@ void WaveriderGUI::setWebChannel(WMenuItem* item)
 void WaveriderGUI::loadBouquetChannels(WMenuItem* item)
 {
     CStationItem* sitem = (CStationItem*) item;
-
+    string bouquetName = sitem->getServiceName();
+    
     vector<WMenuItem*> items = mBouquetChannelMenu->items();
-    for_each(begin(items), end(items), [this](WMenuItem* item) 
+    for_each(begin(items), end(items), [this](WMenuItem* wmi) 
     {
-        CStationItem* menuitem = (CStationItem*) item; 
-        mBouquetChannelMenu->removeItem(item);
+        CStationItem* menuitem = (CStationItem*) wmi; 
+        cout << "Removing " << menuitem->getServiceName() << endl;
+        mBouquetChannelMenu->removeItem(wmi);
     });
 
-    _favoriteText->setText("<h3>Favoriten: " + sitem->getServiceName()+"</h3>");
-
-    _radioServer.loadChannelsInBouquet(sitem->getServiceName());
+    _favoriteText->setText("<h3>Favoriten: " + bouquetName + "</h3>");
+    _radioServer.loadChannelsInBouquet(bouquetName);
 }
 
 void WaveriderGUI::loadBouquets()
