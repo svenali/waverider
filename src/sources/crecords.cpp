@@ -21,7 +21,8 @@
 
 CRecords::CRecords(WaveriderGUI &gui)
     :   WContainerWidget(),
-        _rider_gui(gui)
+        _rider_gui(gui),
+        _lastSorted(SortBy::HEADER)
 {
     this->setStyleClass("row");
 
@@ -62,16 +63,25 @@ void CRecords::initDownloadPage()
     auto label = _files->addNew<WLabel>();
     label->setText("<h3>Content of the directory: " + _rider_gui.recordPath() + "</h3>");
 
-    auto table = make_unique<WTable>();
+    auto table = make_unique<CRecordTable>();
     auto table_ = table.get();
     table->setHeaderCount(1);
     table->setWidth(Wt::WLength("100%"));
-
-    table_->elementAt(0, 0)->addNew<WText>("#");
-    table_->elementAt(0, 1)->addNew<WText>("Filename");
-    table_->elementAt(0, 2)->addNew<WText>("Date");
-    table_->elementAt(0, 3)->addNew<WText>("Size");
-    table_->elementAt(0, 4)->addNew<WText>("Actions");
+    
+    WPushButton *number_header = table->elementAt(0, 0)->addNew<WPushButton>("#");
+    number_header->setStyleClass("table-button-header");
+    number_header->clicked().connect(this, &CRecords::sortByHashTagNumber);
+    WPushButton *filename_header = table_->elementAt(0, 1)->addNew<WPushButton>("Filename");
+    filename_header->setStyleClass("table-button-header");
+    filename_header->clicked().connect(this, &CRecords::sortByHeader);
+    WPushButton *date_header = table_->elementAt(0, 2)->addNew<WPushButton>("Date");
+    date_header->setStyleClass("table-button-header");
+    date_header->clicked().connect(this, &CRecords::sortByDate);
+    WPushButton *size_header = table->elementAt(0, 3)->addNew<WPushButton>("Size");
+    size_header->setStyleClass("table-button-header");
+    size_header->clicked().connect(this, &CRecords::sortBySize);
+    WPushButton *action_header = table->elementAt(0, 4)->addNew<WPushButton>("Actions");
+    action_header->setStyleClass("table-button-header");
 
     int row = 1;
 
@@ -194,4 +204,156 @@ void CRecords::initContentPage(vector<vector<string>> c)
     }
 
     _filecontent->addWidget(std::move(table));
+}
+
+void CRecords::sortByHeader()
+{
+    // 0 => WLabel
+    // 1 => CRecordTable
+    CRecordTable *recordTable = dynamic_cast<CRecordTable*>(_files->widget(1));
+    WPushButton *filename_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 1)->widget(0));
+    WPushButton *number_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 0)->widget(0));
+    WPushButton *date_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 2)->widget(0));
+    WPushButton *size_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 3)->widget(0));
+    if (_lastSorted == SortBy::HEADER)
+    {
+        recordTable->sortRecords(1, false);
+        _lastSorted = SortBy::NOTHING;
+        filename_header->setText("Filename ⬆");
+        number_header->setText("#");
+        date_header->setText("Date");
+        size_header->setText("Size");
+    }
+    else
+    {
+        recordTable->sortRecords(1);
+        _lastSorted = SortBy::HEADER;
+        filename_header->setText("Filename ⬇");
+        number_header->setText("#");
+        date_header->setText("Date");
+        size_header->setText("Size");
+    }
+
+    // Repair connect from Buttons 
+    for (int i = 1; i < recordTable->rowCount(); i++)
+    {
+        auto c = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(0));
+        auto b = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(1));
+        c->deleteClicked().connect(this, &CRecords::showContent);
+        b->deleteClicked().connect(this, &CRecords::deleteFile);
+    }
+}
+
+void CRecords::sortByDate()
+{
+    // 0 => WLabel
+    // 1 => CRecordTable
+    CRecordTable *recordTable = dynamic_cast<CRecordTable*>(_files->widget(1));
+    WPushButton *filename_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 1)->widget(0));
+    WPushButton *number_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 0)->widget(0));
+    WPushButton *date_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 2)->widget(0));
+    WPushButton *size_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 3)->widget(0));
+    if (_lastSorted == SortBy::DATE)
+    {
+        recordTable->sortRecords(2, false);
+        _lastSorted = SortBy::NOTHING;
+        filename_header->setText("Filename");
+        number_header->setText("#");
+        date_header->setText("Date ⬆");
+        size_header->setText("Size");
+    }
+    else
+    {
+        recordTable->sortRecords(2);
+        _lastSorted = SortBy::DATE;
+        filename_header->setText("Filename");
+        number_header->setText("#");
+        date_header->setText("Date ⬇");
+        size_header->setText("Size");
+    }
+
+    // Repair connect from Buttons 
+    for (int i = 1; i < recordTable->rowCount(); i++)
+    {
+        auto c = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(0));
+        auto b = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(1));
+        c->deleteClicked().connect(this, &CRecords::showContent);
+        b->deleteClicked().connect(this, &CRecords::deleteFile);
+    }
+}
+
+void CRecords::sortBySize()
+{
+    // 0 => WLabel
+    // 1 => CRecordTable
+    CRecordTable *recordTable = dynamic_cast<CRecordTable*>(_files->widget(1));
+    WPushButton *filename_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 1)->widget(0));
+    WPushButton *number_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 0)->widget(0));
+    WPushButton *date_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 2)->widget(0));
+    WPushButton *size_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 3)->widget(0));
+    if (_lastSorted == SortBy::SIZE)
+    {
+        recordTable->sortRecords(3, false);
+        _lastSorted = SortBy::NOTHING;
+        filename_header->setText("Filename");
+        number_header->setText("#");
+        date_header->setText("Date");
+        size_header->setText("Size ⬆");
+    }
+    else
+    {
+        recordTable->sortRecords(3);
+        _lastSorted = SortBy::SIZE;
+        filename_header->setText("Filename");
+        number_header->setText("#");
+        date_header->setText("Date");
+        size_header->setText("Size ⬇");
+    }
+
+    // Repair connect from Buttons 
+    for (int i = 1; i < recordTable->rowCount(); i++)
+    {
+        auto c = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(0));
+        auto b = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(1));
+        c->deleteClicked().connect(this, &CRecords::showContent);
+        b->deleteClicked().connect(this, &CRecords::deleteFile);
+    }
+}
+
+void CRecords::sortByHashTagNumber()
+{
+    // 0 => WLabel
+    // 1 => CRecordTable
+    CRecordTable *recordTable = dynamic_cast<CRecordTable*>(_files->widget(1));
+    WPushButton *filename_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 1)->widget(0));
+    WPushButton *number_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 0)->widget(0));
+    WPushButton *date_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 2)->widget(0));
+    WPushButton *size_header = dynamic_cast<WPushButton*>(recordTable->elementAt(0, 3)->widget(0));
+    if (_lastSorted == SortBy::HASHTAG_NUMBER)
+    {
+        recordTable->sortRecords(0, false);
+        _lastSorted = SortBy::NOTHING;
+        filename_header->setText("Filename");
+        number_header->setText("# ⬆");
+        date_header->setText("Date");
+        size_header->setText("Size");
+    }
+    else
+    {
+        recordTable->sortRecords(0);
+        _lastSorted = SortBy::HASHTAG_NUMBER;
+        filename_header->setText("Filename");
+        number_header->setText("# ⬇");
+        date_header->setText("Date");
+        size_header->setText("Size");
+    }
+
+    // Repair connect from Buttons 
+    for (int i = 1; i < recordTable->rowCount(); i++)
+    {
+        auto c = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(0));
+        auto b = dynamic_cast<CDeletePushButton*>(recordTable->elementAt(i, 4)->widget(1));
+        c->deleteClicked().connect(this, &CRecords::showContent);
+        b->deleteClicked().connect(this, &CRecords::deleteFile);
+    }
 }

@@ -1274,6 +1274,7 @@ void CRadioServer::saveBouquetsInDB(map<string, map<string,string>> bouquets)
 {
     dbo::Transaction transaction{_session};
     typedef dbo::collection< dbo::ptr<CDBOBouquet> > dbBouquets;
+    typedef dbo::collection< dbo::ptr<CDBOCountry> > dbCountries;
     dbBouquets db_bouquets = _session.find<CDBOBouquet>();
     list<string> toDeleted;
 
@@ -1344,7 +1345,7 @@ void CRadioServer::saveBouquetsInDB(map<string, map<string,string>> bouquets)
             bq.modify()->services.erase(*it2);
         }
         
-        //add exists services to this bouquet
+        //add existing services to this bouquet
         for (auto it2 = begin(it->second); it2 != end(it->second); ++it2)
         {
            // identify personal added radio station ...
@@ -1359,7 +1360,10 @@ void CRadioServer::saveBouquetsInDB(map<string, map<string,string>> bouquets)
 
                vector<string> data = MiscTools::SplitString(it2->first, ';');
 
-               dbo::ptr<CDBOCountry> searchedCountry = _session.find<CDBOCountry>().where("code = ?").bind("DE");
+               // Countries can be exists with more than one name (here Deutschland and Germany!) 
+               //[Bug 16-01-2024] dbo::ptr<CDBOCountry> searchedCountry = _session.find<CDBOCountry>().where("code = ?").bind("DE");
+               dbCountries countries = _session.find<CDBOCountry>().where("code = ?").bind("DE");
+               dbo::ptr<CDBOCountry> searchedCountry = *begin(countries);
                dbo::ptr<CDBOInternetChannel> addedChannel =  _session.add(std::unique_ptr<CDBOInternetChannel>{new CDBOInternetChannel()});
 
                addedChannel.modify()->language = "deutsch";
