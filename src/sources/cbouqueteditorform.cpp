@@ -203,6 +203,11 @@ int CBouquetEditorForm::channelInBouquetModelRow(string title)
 	return -1;
 }
 
+void CBouquetEditorForm::clearChannelsInBouquetModel()
+{
+    _channels_in_bouquet->clear();
+}
+
 int CBouquetEditorForm::dabChannelsModelRow(string title)
 {
     for (int i = 0; i < _dab_channels->rowCount(); ++i)

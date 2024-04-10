@@ -119,6 +119,7 @@ set(HEADERS
     src/include/cexportaudioresource.h
     src/include/cinternet-audio.h
     src/include/cdeletepushbutton.h
+    src/include/crecordtable.h
     src/include/crecords.h
     src/include/cradiobrowser.h
     src/include/csettings.h
@@ -193,6 +194,7 @@ set(SOURCES
     src/sources/cexportaudioresource.cpp
     src/sources/cinternet-audio.cpp
     src/sources/cdeletepushbutton.cpp
+    src/sources/crecordtable.cpp
     src/sources/crecords.cpp
     src/sources/cradiobrowser.cpp
     src/sources/csettings.cpp
