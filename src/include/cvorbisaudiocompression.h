@@ -60,7 +60,7 @@ struct TVORBISBufferConf {
         uint8_t *pointerToIndividualBuffer;     // custom output_buffer for a later free
 };
 
-static int writeVORBISToRingBuffer(void* opaque, uint8_t* buf, int buf_size);
+static int writeVORBISToRingBuffer(void* opaque, const uint8_t* buf, int buf_size);
 
 class CVORBISAudioCompression : public CAudioCompression
 {

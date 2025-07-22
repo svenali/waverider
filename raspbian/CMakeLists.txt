@@ -79,6 +79,7 @@ set(HEADERS
     src/include/cinternetdevice.h
     src/include/cinternet-audio.h
     src/include/cdeletepushbutton.h
+    src/include/crecordtable.h
     src/include/crecords.h
     src/include/csettings.h
     src/include/csettingsform.h
@@ -134,6 +135,7 @@ set(SOURCES
     src/sources/cinternetdevice.cpp
     src/sources/cinternet-audio.cpp
     src/sources/cdeletepushbutton.cpp
+    src/include/crecordtable.cpp
     src/sources/crecords.cpp
     src/sources/csettings.cpp
     src/sources/csettingsform.cpp

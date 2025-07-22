@@ -48,10 +48,8 @@ class CStreamingServer : public WServer
         int getAudioSamplerate();
 
         void log(string type, string message);
-        void setLogger(WLogger& logger) { _radioServerLogger = logger; };
-
+        
     private:
-        WLogger _radioServerLogger;
         CSimpleTimer streamingTimer;
         CRadioController* _radioController;
         unique_ptr<CInternetDevice> _internetDevice;

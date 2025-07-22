@@ -39,11 +39,21 @@
 
 #include "waverider-gui.h"
 #include "cdeletepushbutton.h"
+#include "crecordtable.h"
 
 using namespace Wt;
 using namespace std;
 
 class WaveriderGUI;
+
+typedef enum SortBy
+{
+    HEADER,
+    DATE,
+    SIZE,
+    HASHTAG_NUMBER,
+    NOTHING
+} sortby_t;
 
 class CRecords : public WContainerWidget
 {
@@ -57,6 +67,11 @@ class CRecords : public WContainerWidget
         void updateDownloadPage();
         void initContentPage(vector<vector<string>> c);
 
+        void sortByHeader();
+        void sortByDate();
+        void sortBySize();
+        void sortByHashTagNumber();
+
     private:
         int dirExists(const char* const path);
 
@@ -65,6 +80,7 @@ class CRecords : public WContainerWidget
         WContainerWidget *_filecontent;
 
         WTable * _ContentTable;
+        sortby_t _lastSorted;
 };
 
 #endif //_CRECORDS_H_

@@ -60,7 +60,7 @@ struct TAACBufferConf {
         uint8_t *pointerToIndividualBuffer;     // custom output_buffer for a later free
 };
 
-static int writeAACToRingBuffer(void* opaque, uint8_t* buf, int buf_size);
+static int writeAACToRingBuffer(void* opaque, const uint8_t* buf, int buf_size);
 static int readFromAACBuffer(void* opaque, uint8_t* buf, int buf_size);
 static int64_t seekAACInBuffer(void *opaque, int64_t offset, int whence);
 

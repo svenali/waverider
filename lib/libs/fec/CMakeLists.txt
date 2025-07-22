@@ -1,7 +1,7 @@
 ########################################################################
 # Project setup
 ########################################################################
-
+cmake_minimum_required(VERSION 3.16)
 project(libfec ASM C)
 
 
@@ -90,4 +90,4 @@ target_link_libraries(fec ${M_LIB})
 # Build the tests
 ########################################################################
 
-add_subdirectory(test)
+#add_subdirectory(test)

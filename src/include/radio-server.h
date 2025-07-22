@@ -243,7 +243,7 @@ class CDBORecord;
 class CRadioServer : public WServer 
 {
     public:
-        CRadioServer(int argc, char *argv[], const std::string &wtConfigurationFile=std::string(),CStreamingServer *ss=NULL);
+        CRadioServer(int argc, char *argv[], const std::string &wtConfigurationFile=std::string(), CStreamingServer *ss=NULL);
         ~CRadioServer();
 
         class Client { }; // Placeholderclass for the client
@@ -346,7 +346,7 @@ class CRadioServer : public WServer
         void log(string type, string message);
         
     private:
-        WLogger _logger;
+        WLogger* _logger = nullptr;
         CurrentPlayingStationType _currentPlayingStationType;
 
         string generateUUID();

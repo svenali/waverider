@@ -131,7 +131,7 @@ void CALACAudioCompression::stop_compression()
 #endif
 }
 
-int writeALACToRingBuffer(void* opaque, uint8_t* buf, int buf_size)
+int writeALACToRingBuffer(void* opaque, const uint8_t* buf, int buf_size)
 {
     TALACBufferConf *buffer_conv = reinterpret_cast<TALACBufferConf*>(opaque);
 
@@ -236,8 +236,12 @@ void CALACAudioCompression::init_codec_context()
     _CodecContext = avcodec_alloc_context3(_Codec);
     //_CodecContext->bit_rate = 320000;                   // Good CD Quality
     _CodecContext->sample_fmt = AV_SAMPLE_FMT_S16P;     // Input from ALL Decoders is always FMT_FLTP
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+    av_channel_layout_default(&_CodecContext->ch_layout, 2);  // Stereo
+#else
     _CodecContext->channel_layout = AV_CH_LAYOUT_STEREO;
-    _CodecContext->channels       = 2;                  // Stereo
+    _CodecContext->channels = 2;                              // Stereo
+#endif
     _CodecContext->sample_rate    = audioSampleRate;
     _CodecContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     //_CodecContext->sample_rate    = 44100;
@@ -301,6 +305,30 @@ void CALACAudioCompression::free_conv_buffer(uint8_t** buffer, int channels)
 #if defined(HAVE_FFMPEG)
 SwrContext* CALACAudioCompression::init_swr_context()
 {
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+    SwrContext *swr = NULL;
+    int ret = swr_alloc_set_opts2(&swr,
+                             &_CodecContext->ch_layout,         // out layout (pointer)
+                             _CodecContext->sample_fmt,         // out format
+                             _CodecContext->sample_rate,        // out rate
+                             &_CodecContext->ch_layout,         // in layout (pointer)
+                             _CodecContext->sample_fmt,         // in format
+                             _CodecContext->sample_rate,        // in rate
+                             0, NULL);
+    if (ret < 0) {
+        // Fehlerbehandlung
+        _radioController->getRadioServer()->log("error", "[CFLACAudioCompression] SWR allocation error!");
+        return NULL;
+    }
+
+    ret = swr_init(swr);
+    if (ret < 0) {
+        // Fehlerbehandlung
+        _radioController->getRadioServer()->log("error", "[CFLACAudioCompression] SWR init error!");
+        return NULL;
+    }
+#else
+
     SwrContext *swr = swr_alloc_set_opts(NULL,
             _CodecContext->channel_layout,          // output
             _CodecContext->sample_fmt,              // output
@@ -310,6 +338,7 @@ SwrContext* CALACAudioCompression::init_swr_context()
             audioSampleRate,                        // input
             0,
             NULL);
+
     int swrInit = swr_init(swr);
     if (swrInit < 0)
     {
@@ -318,6 +347,7 @@ SwrContext* CALACAudioCompression::init_swr_context()
     }
 
     return swr;
+#endif
 }
 #endif
 
@@ -349,7 +379,11 @@ void CALACAudioCompression::directFeed(int16_t* data, int len)
 
     input_frame->nb_samples     = frame_size;
     input_frame->format         = AV_SAMPLE_FMT_S16;
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+    av_channel_layout_default(&input_frame->ch_layout, 2);  // Stereo
+#else
     input_frame->channel_layout = AV_CH_LAYOUT_STEREO;
+#endif            
 
     int error = avcodec_fill_audio_frame(
         input_frame,
@@ -420,8 +454,12 @@ void CALACAudioCompression::encodeFrame()
     output_frame->nb_samples = frame_size;
     output_frame->format = _CodecContext->sample_fmt;
     output_frame->sample_rate = _CodecContext->sample_rate;
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+    av_channel_layout_copy(&output_frame->ch_layout, &_CodecContext->ch_layout);
+#else
     output_frame->channel_layout = _CodecContext->channel_layout;
-    output_frame->channels = 2;
+    output_frame->channels = _CodecContext->channels;
+#endif
     // output_frame->ch_layout.nb_channels = 2; // ab ffmpeg 5.1!
 
     /* Allocate the samples of the created frame. This call will make

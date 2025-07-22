@@ -100,6 +100,8 @@ void CRadioBrowser::parseCountries()
     Json::parse(_answer, result);
 
     cerr << "Size: " << result.size() << endl;
+    //cerr << "Content: " << _answer << endl;
+
     for(vector<Json::Value>::iterator it = begin(result); it != end(result); ++it) 
     {
         Json::Object o = *it;
@@ -124,42 +126,57 @@ void CRadioBrowser::parseCountries()
 
 void CRadioBrowser::parseChannels()
 {
-    Json::Array result;
-    Json::parse(_answer, result);
+    try
+    {
+        Json::Array result;
+        Json::parse(_answer, result);
 
-    _countedCountry++;
-    
-    if (_countryArray.size() == _countedCountry)
-    {
-        _radioServer.scan_internet_finished();
-    }
-    else
-    {
-        for(vector<Json::Value>::iterator it = begin(result); it != end(result); ++it) 
+        _countedCountry++;
+        
+        if (_countryArray.size() == _countedCountry)
         {
-            Json::Object o = *it;
-            string c = o.get("name");
-            
-            // create Channel in RadioServer
-            string stationuuid = (o.get("stationuuid").isNull()) ? "" : o.get("stationuuid").toString();
-            string name = (o.get("name").isNull()) ? "" : o.get("name").toString();
-            string url = (o.get("url").isNull()) ? "" : o.get("url").toString();
-            string url_resolved = (o.get("url_resolved").isNull()) ? "" : o.get("url_resolved").toString();
-            string homepage = (o.get("homepage").isNull()) ? "" : o.get("homepage").toString();
-            string favicon = (o.get("favicon").isNull()) ? "" : o.get("favicon").toString();
-            string tags = (o.get("tags").isNull()) ? "" : o.get("tags").toString();
-            string country = (o.get("country").isNull()) ? "" : o.get("country").toString();
-            string countrycode = (o.get("countrycode").isNull()) ? "" : o.get("countrycode").toString();
-            string state = (o.get("state").isNull()) ? "" : o.get("state").toString();
-            string language = (o.get("language").isNull()) ? "" : o.get("language").toString();
-            string languagecode = (o.get("languagecode").isNull()) ? "" : o.get("languagecode").toString();
-            int votes = (o.get("votes").isNull()) ? "" : o.get("votes");
-            string codec = (o.get("codec").isNull()) ? "" : o.get("codec").toString();
-            int bitrate = (o.get("bitrate").isNull()) ? "" : o.get("bitrate");
-            _radioServer.addWebChannel(stationuuid, name, url, url_resolved, homepage, favicon, tags, country, countrycode, state, language, languagecode, votes, codec, bitrate);
-
-            _radioServer.tellCountryScan(_countedCountry, country, countrycode);
+            _radioServer.scan_internet_finished();
         }
+        else
+        {
+            for(vector<Json::Value>::iterator it = begin(result); it != end(result); ++it) 
+            {
+                Json::Object o = *it;
+                string c = o.get("name");
+                
+                // create Channel in RadioServer
+                string stationuuid = (o.get("stationuuid").isNull()) ? "" : o.get("stationuuid").toString();
+                string name = (o.get("name").isNull()) ? "" : o.get("name").toString();
+                string url = (o.get("url").isNull()) ? "" : o.get("url").toString();
+                string url_resolved = (o.get("url_resolved").isNull()) ? "" : o.get("url_resolved").toString();
+                string homepage = (o.get("homepage").isNull()) ? "" : o.get("homepage").toString();
+                string favicon = (o.get("favicon").isNull()) ? "" : o.get("favicon").toString();
+                string tags = (o.get("tags").isNull()) ? "" : o.get("tags").toString();
+                string country = (o.get("country").isNull()) ? "" : o.get("country").toString();
+                string countrycode = (o.get("countrycode").isNull()) ? "" : o.get("countrycode").toString();
+                string state = (o.get("state").isNull()) ? "" : o.get("state").toString();
+                string language = (o.get("language").isNull()) ? "" : o.get("language").toString();
+                string languagecode = (o.get("languagecode").isNull()) ? "" : o.get("languagecode").toString();
+                int votes = (o.get("votes").isNull()) ? "" : o.get("votes");
+                string codec = (o.get("codec").isNull()) ? "" : o.get("codec").toString();
+                int bitrate = (o.get("bitrate").isNull()) ? "" : o.get("bitrate");
+                _radioServer.addWebChannel(stationuuid, name, url, url_resolved, homepage, favicon, tags, country, countrycode, state, language, languagecode, votes, codec, bitrate);
+
+                _radioServer.tellCountryScan(_countedCountry, country, countrycode);
+            }
+
+            if (_countryIterator != end(_countryArray))
+            {
+                _answer = "";
+                _countryIterator++;
+                Json::Object nextCountry = *_countryIterator;
+                downloadChannels(nextCountry.get("name"));
+            }
+        }
+    }
+    catch(Json::ParseError e)
+    {
+        _radioServer.log("error", "[CRadioBrowser] Json-Parse-Error" + string(e.what()));
 
         if (_countryIterator != end(_countryArray))
         {

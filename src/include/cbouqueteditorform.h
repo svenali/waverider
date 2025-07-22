@@ -92,6 +92,7 @@ class CBouquetEditorForm : public WFormModel
         void delChannel(string bouquet_name, string name);
         bool addChannelToBouqet(string bouquet_name, string uuid, string name);
         bool actualizeChannelInBouquetModel(string bouquet_name);
+        void clearChannelsInBouquetModel();
         
         typedef map< string, string > FilterMap;
         typedef map< string, map<string, string>> ChannelToBouquetMap;

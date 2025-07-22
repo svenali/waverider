@@ -138,8 +138,15 @@ void CInternetAudio::decodePacket(AVCodecContext *dec_ctx, AVPacket *pkt, AVFram
             
             return;
         }
-        int data_size = frame->nb_samples*frame->channels;
-        audioChannels = frame->channels;
+
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+        int channels = frame->ch_layout.nb_channels;
+#else
+        int channels = frame->channels;
+#endif
+
+        int data_size = frame->nb_samples * channels;
+        audioChannels = channels;
         swr_convert(swr, &pcmAudioBuffer, frame->nb_samples, (const uint8_t**)frame->extended_data, frame->nb_samples);
 
         audioSamplerate = frame->sample_rate;
@@ -188,6 +195,40 @@ void CInternetAudio::decodeAudio()
     this_thread::sleep_for(chrono::microseconds(3));
 
     SwrContext *swr = NULL;
+
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+    if (!swr)
+    {
+        AVChannelLayout out_ch_layout, in_ch_layout;
+
+        // Initialisiere die Kanal-Layouts
+        av_channel_layout_default(&out_ch_layout, 2); // Stereo
+        av_channel_layout_default(&in_ch_layout, 2);  // Stereo
+
+        // Nutze swr_alloc_set_opts2 mit AVChannelLayout
+        int ret = swr_alloc_set_opts2(
+            &swr,
+            &out_ch_layout,            // output layout
+            AV_SAMPLE_FMT_S16,         // output format
+            44100,                     // output sample rate
+            &in_ch_layout,             // input layout
+            AV_SAMPLE_FMT_FLTP,        // input format
+            44100,                     // input sample rate
+            0,                         // log offset
+            NULL                       // log context
+        );
+
+        if (ret < 0 || !swr) {
+            ((CRadioController*) &_myProgrammeHandler)->getRadioServer()->log("error", "[CInternetAudio] Failed to allocate SwrContext.");
+            exit(1);
+        }
+
+        if ((ret = swr_init(swr)) < 0) {
+            ((CRadioController*) &_myProgrammeHandler)->getRadioServer()->log("error", "[CInternetAudio] SWR init error swrInit.");
+            exit(1);
+        }
+    }
+#else
     if (!swr)
     {
         swr = swr_alloc_set_opts(NULL,
@@ -207,6 +248,7 @@ void CInternetAudio::decodeAudio()
             exit(1);
         }
     }
+#endif
 
     uint8_t *pcmAudioBuffer = (uint8_t*) av_malloc (AUDIO_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE);
     

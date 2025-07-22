@@ -42,6 +42,8 @@ extern "C"
     #include <libavutil/channel_layout.h>
     #include <libavutil/samplefmt.h>
     #include <libswresample/swresample.h>
+    #include <libavutil/channel_layout.h>
+    #include <libavutil/version.h>
     #include "wavfile.h"
 }
 
@@ -60,7 +62,7 @@ struct TMP3BufferConf {
         uint8_t *pointerToIndividualBuffer;
 };
 
-static int writeMP3ToRingBuffer(void* opaque, uint8_t* buf, int buf_size);
+static int writeMP3ToRingBuffer(void* opaque, const uint8_t* buf, int buf_size);
 
 class CMP3AudioCompression : public CAudioCompression
 {

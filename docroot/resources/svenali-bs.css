@@ -191,6 +191,11 @@ and (orientation: portrait) {
     /* height: 40px; */
 }
 
+.table-button-header {
+    border: 0px;
+    font-weight: bold;
+}
+
 /* .nav-pills {
     margin-top: 8px;
     margin-bottom: 8px;

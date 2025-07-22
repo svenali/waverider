@@ -269,7 +269,31 @@ void CBouquetEditorView::removeBouquet()
     WSelectionBox *bouquets = (WSelectionBox*) resolveWidget("bouquets");
     WComboBox *bouquets_selection = (WComboBox*) resolveWidget("bouquet-selection");
 
-    _form->delBouquet(asString(bouquets->itemText(bouquets->currentIndex())).toUTF8());
+    // Which Bouquet is shown in the editor-section?
+    WSelectionBox *bouquet_selection = (WSelectionBox*) resolveWidget("bouquet-selection");
+    string open_bouquet_str = asString(bouquet_selection->itemText(bouquet_selection->currentIndex())).toUTF8();
+    string del_bouquet_str = asString(bouquets->itemText(bouquets->currentIndex())).toUTF8();
+    
+    // delete shown channels in bouquet editor
+    if (open_bouquet_str.compare(del_bouquet_str) == 0)
+    {
+        _form->clearChannelsInBouquetModel();
+    }
+
+    // delete bouquet from model
+    _form->delBouquet(del_bouquet_str);
+
+    // if a bouquet in the editor is automatically selected, show it
+    int still_open_is = bouquet_selection->currentIndex();
+
+    if (still_open_is >= 0)
+    {
+        this->showChannelsInBouquet(still_open_is);
+    }
+    else
+    {
+        updateView(_form.get());
+    }
 
     /* set<int> selection = bouquets->selectedIndexes();
     for (set<int>::iterator it = selection.begin(); it != selection.end(); ++it) 
