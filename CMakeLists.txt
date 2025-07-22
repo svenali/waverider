@@ -33,7 +33,7 @@ include_directories(
     "${CMAKE_SOURCE_DIR}/src/include")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 if (APPLE)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwthttp -lwt -lwtdbo -lwtdbosqlite3 -lboost_system -lboost_thread-mt -lboost_filesystem -lboost_program_options -lrtlsdr -lmpg123 -lfaad -lfftw3 -lfftw3f ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwthttp -lwt -lwtdbo -lwtdbosqlite3 -lboost_system -lboost_thread -lboost_filesystem -lboost_program_options -lrtlsdr -lmpg123 -lfaad -lfftw3 -lfftw3f ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a")
 endif(APPLE)
 
 #FFMPEG
@@ -52,7 +52,7 @@ if (AVCODEC_LIBRARY)
     include_directories(${AVCODEC_INCLUDE})
     include_directories(${AVFORMAT_INCLUDE})
     if (APPLE)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwthttp -lwt -lwtdbo -lwtdbosqlite3 -lboost_system -lboost_thread-mt -lboost_filesystem -lboost_program_options -lrtlsdr -lmpg123 -lfaad -lfftw3 -lfftw3f -lavcodec -lavformat -lavutil -lswresample ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lwthttp -lwt -lwtdbo -lwtdbosqlite3 -lboost_system -lboost_thread -lboost_filesystem -lboost_program_options -lrtlsdr -lmpg123 -lfaad -lfftw3 -lfftw3f -lavcodec -lavformat -lavutil -lswresample ${CMAKE_SOURCE_DIR}/lib/libs/fec/libfec.a")
     endif(APPLE)
 endif()
 

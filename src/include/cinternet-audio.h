@@ -38,6 +38,9 @@ extern "C"
     #include <libavutil/channel_layout.h>
     #include <libavutil/samplefmt.h>
     #include <libswresample/swresample.h>
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+    #include <libavutil/channel_layout.h>
+#endif
     #include "wavfile.h"
 }
 

@@ -67,7 +67,7 @@ struct TIndividualBufferConf {
         uint8_t *pointerToIndividualBuffer;
 };
 
-static int writeToRingBuffer(void* opaque, uint8_t* buf, int buf_size);
+static int writeToRingBuffer(void* opaque, const uint8_t* buf, int buf_size);
 
 class CFLACAudioCompression : public CAudioCompression
 {

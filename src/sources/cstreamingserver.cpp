@@ -78,9 +78,11 @@ int CStreamingServer::getAudioSamplerate()
 
 void CStreamingServer::log(string type, string message)
 {
-    WLogEntry entry = _radioServerLogger.entry(type);
+    WLogEntry entry = this->logger().entry(type);
     
     entry << WLogger::timestamp << Wt::WLogger::sep
-      << '[' << type << ']' << Wt::WLogger::sep
-      << message;
+          << '[' << type << ']' << Wt::WLogger::sep
+          << message;
+
+    return;
 }

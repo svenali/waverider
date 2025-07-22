@@ -137,7 +137,6 @@ int main(int argc, char **argv)
 
   // auch der Streaming-Server schickt die dekodierten Frames an den RadioController (onNewAudio)
   streamingServer.setRadioController(radioServer.getRadioController());
-  streamingServer.setLogger(radioServer.logger());
   streamingServer.start();
 
   if (radioServer.start()) 

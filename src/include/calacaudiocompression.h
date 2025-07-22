@@ -61,7 +61,7 @@ struct TALACBufferConf {
         uint8_t *pointerToIndividualBuffer;
 };
 
-static int writeALACToRingBuffer(void* opaque, uint8_t* buf, int buf_size);
+static int writeALACToRingBuffer(void* opaque, const uint8_t* buf, int buf_size);
 static int64_t seekALACInBuffer(void *opaque, int64_t offset, int whence);
 
 class CALACAudioCompression : public CAudioCompression

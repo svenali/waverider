@@ -1732,7 +1732,7 @@ bool CRadioServer::isInternetChannelPlaying()
 
 void CRadioServer::setLogger(WLogger& logger)
 {
-    _logger = logger;
+    _logger = &logger;
 }
 
 void CRadioServer::log(string type, string message)

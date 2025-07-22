@@ -61,7 +61,7 @@ struct TMP2BufferConf {
         uint8_t *pointerToIndividualBuffer;
 };
 
-static int writeMP2ToRingBuffer(void* opaque, uint8_t* buf, int buf_size);
+static int writeMP2ToRingBuffer(void* opaque, const uint8_t* buf, int buf_size);
 
 class CMP2AudioCompression : public CAudioCompression
 {
